@@ -31,11 +31,11 @@ import java.util.{Date, UUID}
 import org.discovery.dvms.dvms.DvmsProtocol._
 import org.discovery.dvms.dvms.DvmsModel._
 import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
-import org.discovery.dvms.log.LoggingProtocol._
-import org.discovery.dvms.configuration.ExperimentConfiguration
+//import org.discovery.dvms.log.LoggingProtocol._
+//import org.discovery.dvms.configuration.ExperimentConfiguration
 import org.discovery.dvms.entropy.EntropyProtocol.{MigrateVirtualMachine, EntropyComputeReconfigurePlan}
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
-import org.discovery.dvms.monitor.MonitorEvent
+//import org.discovery.dvms.monitor.MonitorEvent
 import org.discovery.AkkaArc.notification.NotificationActorProtocol.Register
 import org.discovery.AkkaArc.overlay.OverlayService
 
@@ -250,7 +250,7 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
       lastPartitionUpdateDate = None
 
       // Alert LogginActor that the current node is free
-      applicationRef.ref ! IsFree(ExperimentConfiguration.getCurrentTime())
+//      applicationRef.ref ! IsFree(ExperimentConfiguration.getCurrentTime())
     }
 
     case IAmTheNewLeader(partition) => {
@@ -462,7 +462,7 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
             lastPartitionUpdateDate = Some(new Date())
 
             // Alert LogginActor that the current node is booked in a partition
-            applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
+//            applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
 
             partition.nodes.foreach(node => {
               log.info(s"$applicationRef: sending the $newPartition to $node")
@@ -493,7 +493,7 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
 
                 // Alert LogginActor that the current node is booked in a partition
-                applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
+//                applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
 
                 partition.nodes.filter(n => n.location.isDifferentFrom(applicationRef.location)).foreach(node => {
                   log.info(s"$applicationRef: sending the $newPartition to $node")
@@ -599,68 +599,10 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
           }
         }
 
-        solution.actions.keySet().foreach(key => {
-          solution.actions.get(key).foreach(action => {
 
+        // TODO: appliquer les migrations ici
+        println("""/!\ UNIMPLEMENTED /!\: Dans DvmsActor, appliquer les migrations ici""");
 
-            action match {
-              case MakeMigration(from, to, vmName) =>
-                log.info(s"preparing migration of $vmName")
-
-
-                var fromNodeRef: Option[NodeRef] = None
-                var toNodeRef: Option[NodeRef] = None
-
-                partition.nodes.foreach(nodeRef => {
-                  log.info(s"check ${nodeRef.location.getId} == ( $from | $to ) ?")
-
-                  if (s"${nodeRef.location.getId}" == from) {
-                    fromNodeRef = Some(nodeRef)
-                  }
-
-                  if (s"${nodeRef.location.getId}" == to) {
-                    toNodeRef = Some(nodeRef)
-                  }
-                })
-
-                (fromNodeRef, toNodeRef) match {
-                  case (Some(from), Some(to)) =>
-                    log.info(s"send migrate message {from:$fromNodeRef, to: $toNodeRef, vmName: $vmName}")
-
-                    (fromNodeRef, toNodeRef) match {
-                      case (Some(from), Some(to)) =>
-                        applicationRef.ref ! DoingMigration(ExperimentConfiguration.getCurrentTime(), from.location.getId, to.location.getId)
-                      case _ =>
-                    }
-
-
-
-                    var migrationSucceed = false
-
-                    implicit val timeout = Timeout(300 seconds)
-                    val future = (from.ref ? MigrateVirtualMachine(vmName, to.location)).mapTo[Boolean]
-
-                    try {
-                      migrationSucceed  = Await.result(future, timeout.duration)
-                    } catch {
-                      case e: Throwable =>
-                        e.printStackTrace()
-                        migrationSucceed = false
-                    }
-
-                    log.info(s"migrate {from:$fromNodeRef, to: $toNodeRef, vmName: $vmName} : result => $migrationSucceed")
-                  case _ =>
-                    log.info(s"migrate {from:$fromNodeRef, to: $toNodeRef, vmName: $vmName} : failed")
-                }
-              case otherAction =>
-                log.info(s"unknownAction $otherAction")
-            }
-
-
-
-
-          })
-        })
 
         continueToUpdatePartition = false
 
@@ -685,44 +627,47 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
   }
 
   // registering an event: when a CpuViolation is triggered, CpuViolationDetected() is sent to dvmsActor
-  applicationRef.ref ! Register((e: MonitorEvent.CpuViolation) => {
 
-    // Alert LogginActor that a violation has been detected
-    applicationRef.ref ! ViolationDetected(ExperimentConfiguration.getCurrentTime())
-
-    currentPartition match {
-      case None => {
-        log.info("Dvms has detected a new cpu violation")
-        printDetails()
-
-        //          firstOut = Some(nextDvmsNode)
-
-        currentPartition = Some(DvmsPartition(
-          applicationRef,
-          applicationRef,
-          List(applicationRef),
-          Growing(),
-          UUID.randomUUID()
-        ))
-
-        lastPartitionUpdateDate = Some(new Date())
-
-        // Alert LogginActor that the current node is booked in a partition
-        applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
-
-        firstOut match {
-          case Some(existingNode) =>
-            log.info(s"$applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
-            existingNode.ref ! TransmissionOfAnISP(currentPartition.get)
-          case None =>
-            log.info(s"$applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
-        }
-
-      }
-      case _ =>
-        println(s"violation detected: this is my Partition [$currentPartition]")
-    }
-  })
+  // TODO: modification de la manière d'enregistrer les événements
+  println("""/!\ UNIMPLEMENTED /!\: Dans DvmsActor, modification de la manière d'enregistrer les événements""");
+//  applicationRef.ref ! Register((e: MonitorEvent.CpuViolation) => {
+//
+//    // Alert LogginActor that a violation has been detected
+////    applicationRef.ref ! ViolationDetected(ExperimentConfiguration.getCurrentTime())
+//
+//    currentPartition match {
+//      case None => {
+//        log.info("Dvms has detected a new cpu violation")
+//        printDetails()
+//
+//        //          firstOut = Some(nextDvmsNode)
+//
+//        currentPartition = Some(DvmsPartition(
+//          applicationRef,
+//          applicationRef,
+//          List(applicationRef),
+//          Growing(),
+//          UUID.randomUUID()
+//        ))
+//
+//        lastPartitionUpdateDate = Some(new Date())
+//
+//        // Alert LogginActor that the current node is booked in a partition
+////        applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
+//
+//        firstOut match {
+//          case Some(existingNode) =>
+//            log.info(s"$applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
+//            existingNode.ref ! TransmissionOfAnISP(currentPartition.get)
+//          case None =>
+//            log.info(s"$applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
+//        }
+//
+//      }
+//      case _ =>
+//        println(s"violation detected: this is my Partition [$currentPartition]")
+//    }
+//  })
 
   // registering a timer that will check if the node is in a partition and then if there is an activity from
   // this partition

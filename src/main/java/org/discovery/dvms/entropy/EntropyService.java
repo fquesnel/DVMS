@@ -33,10 +33,10 @@ import entropy.plan.choco.ChocoCustomRP;
 import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
-import org.discovery.dvms.configuration.DvmsConfiguration;
-import org.discovery.dvms.configuration.ExperimentConfiguration;
+//import org.discovery.dvms.configuration.DvmsConfiguration;
+//import org.discovery.dvms.configuration.ExperimentConfiguration;
 import org.discovery.dvms.dvms.DvmsModel.PhysicalNode;
-import org.discovery.dvms.log.LoggingProtocol;
+//import org.discovery.dvms.log.LoggingProtocol;
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.*;
 
 import java.util.*;
@@ -75,12 +75,12 @@ public class EntropyService {
         Map<String, List<ReconfigurationAction>> actions = new HashMap<String, List<ReconfigurationAction>>();
 
         // Alert LoggingActor that EntropyService begin a computation
-        if (DvmsConfiguration.IS_G5K_MODE()) {
-            getInstance().loggingActorRef.tell(
-                    new LoggingProtocol.ComputingSomeReconfigurationPlan(ExperimentConfiguration.getCurrentTime()),
-                    null
-            );
-        }
+//        if (DvmsConfiguration.IS_G5K_MODE()) {
+//            getInstance().loggingActorRef.tell(
+//                    new LoggingProtocol.ComputingSomeReconfigurationPlan(ExperimentConfiguration.getCurrentTime()),
+//                    null
+//            );
+//        }
 
 
         for (entropy.configuration.Node node : configuration.getAllNodes()) {
@@ -147,12 +147,12 @@ public class EntropyService {
 
             try {
                 // Alert LoggingActor that EntropyService apply a reconfiguration plan
-                if (DvmsConfiguration.IS_G5K_MODE()) {
-                    getInstance().loggingActorRef.tell(
-                            new LoggingProtocol.ApplyingSomeReconfigurationPlan(ExperimentConfiguration.getCurrentTime()),
-                            null
-                    );
-                }
+//                if (DvmsConfiguration.IS_G5K_MODE()) {
+//                    getInstance().loggingActorRef.tell(
+//                            new LoggingProtocol.ApplyingSomeReconfigurationPlan(ExperimentConfiguration.getCurrentTime()),
+//                            null
+//                    );
+//                }
 
                 actions = applyReconfigurationPlanLogically(reconfigurationPlan, configuration, machines);
 
@@ -162,16 +162,16 @@ public class EntropyService {
             } finally {
 
                 // Alert LoggingActor that migrationCount has changed
-                if (DvmsConfiguration.IS_G5K_MODE()) {
-                    ExperimentConfiguration.incrementMigrationCount(nbMigrations);
-                    getInstance().loggingActorRef.tell(
-                            new LoggingProtocol.UpdateMigrationCount(
-                                    ExperimentConfiguration.getCurrentTime(),
-                                    ExperimentConfiguration.getMigrationCount()
-                            ),
-                            null
-                    );
-                }
+//                if (DvmsConfiguration.IS_G5K_MODE()) {
+//                    ExperimentConfiguration.incrementMigrationCount(nbMigrations);
+//                    getInstance().loggingActorRef.tell(
+//                            new LoggingProtocol.UpdateMigrationCount(
+//                                    ExperimentConfiguration.getCurrentTime(),
+//                                    ExperimentConfiguration.getMigrationCount()
+//                            ),
+//                            null
+//                    );
+//                }
             }
 
         }
@@ -320,12 +320,12 @@ public class EntropyService {
     public static void main(String args[]) {
 
 
-        ExperimentConfiguration.startExperiment();
+//        ExperimentConfiguration.startExperiment();
         try {
             Thread.sleep(1332);
         } catch (InterruptedException e) {
 
         }
-        System.out.println(ExperimentConfiguration.getCurrentTime());
+//        System.out.println(ExperimentConfiguration.getCurrentTime());
     }
 }
