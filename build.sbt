@@ -51,3 +51,8 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
   case x => MergeStrategy.first
 }
 }
+
+// Excluding the following directories for compilation: scheduling/{dvms,dvms2,hubis}
+excludeFilter in unmanagedSources := new sbt.FileFilter{
+  def accept(f: File): Boolean = "(?s).*scheduling/dvms/.*|.*scheduling/dvms2/.*|.*scheduling/hubis/.*".r.pattern.matcher(f.getAbsolutePath).matches
+}
