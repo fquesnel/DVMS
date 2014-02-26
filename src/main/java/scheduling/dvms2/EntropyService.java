@@ -1,12 +1,7 @@
 package scheduling.dvms2;
 
-import configuration.ConfigurationManager;
 import dvms.log.Logger;
 import dvms.scheduling.ComputingState;
-import entropy.ComputationInformation;
-import entropy.NegativeResultOfComputation;
-import entropy.PositiveResultOfComputation;
-import entropy.ResultOfComputation;
 import entropy.configuration.Configuration;
 import entropy.configuration.SimpleManagedElementSet;
 import entropy.execution.Dependencies;

@@ -19,52 +19,31 @@ package org.discovery.dvms.dvms
  * limitations under the License.
  * ============================================================ */
 
-import akka.actor.{ActorLogging, Actor}
-import akka.pattern.ask
-import akka.util.Timeout
 import scala.concurrent.duration._
-import concurrent.{Future, Await, ExecutionContext}
-import java.util.concurrent.Executors
-import org.discovery.AkkaArc.util.NodeRef
+import concurrent.{Future, Await}
 import java.util.{Date, UUID}
 
 import org.discovery.dvms.dvms.DvmsProtocol._
 import org.discovery.dvms.dvms.DvmsModel._
 import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
-//import org.discovery.dvms.log.LoggingProtocol._
-//import org.discovery.dvms.configuration.ExperimentConfiguration
-import org.discovery.dvms.entropy.EntropyProtocol.{MigrateVirtualMachine, EntropyComputeReconfigurePlan}
+//import org.discovery.dvms.entropy.EntropyProtocol.{EntropyComputeReconfigurePlan}
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
-//import org.discovery.dvms.monitor.MonitorEvent
-import org.discovery.AkkaArc.notification.NotificationActorProtocol.Register
-import org.discovery.AkkaArc.overlay.OverlayService
+import scheduling.dvms2.{SGNodeRef, SGActor}
 
 object DvmsActor {
   val partitionUpdateTimeout: FiniteDuration = 3500 milliseconds
+
+
 }
 
-class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends Actor with ActorLogging {
 
-  implicit val timeout = Timeout(2 seconds)
-  implicit val ec = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
+class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   // by default, a node is in a ring containing only it self
-//  var nextDvmsNode: NodeRef = applicationRef
+//  var nextDvmsNode: SGNodeRef = applicationRef
 
   // Variables that are specific to a node member of a partition
-//  var firstOut: Option[NodeRef] = None
-  def firstOut:Option[NodeRef] = {
-
-    val future = currentPartition match {
-      case Some(partition) =>
-        overlayService.giveSomeNeighbourOutside(partition.nodes)
-      case None =>
-        overlayService.giveSomeNeighbour()
-    }
-
-    Await.result(future, 2 seconds)
-
-  }
+  var firstOut: Option[SGNodeRef] = None
 
   var currentPartition: Option[DvmsPartition] = None
 
@@ -73,9 +52,21 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
   var lockedForFusion: Boolean = false
 
+//  val self: SGNodeRef = applicationRef
+
+  def logInfo(msg: String) {
+    println(s"$msg")
+  }
+
+  def logWarning(msg: String) {
+    println(s"$msg")
+  }
+
+  implicit def selfSender: SGNodeRef = self
+
   def mergeWithThisPartition(partition: DvmsPartition) {
 
-    log.info(s"merging $partition with ${currentPartition.get}")
+    logInfo(s"merging $partition with ${currentPartition.get}")
     currentPartition = Some(DvmsPartition(
       currentPartition.get.leader,
       currentPartition.get.initiator,
@@ -85,34 +76,34 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
     lastPartitionUpdateDate = Some(new Date())
 
     currentPartition.get.nodes.foreach(node => {
-      log.info(s"(a) $applicationRef: sending a new version of the partition ${IAmTheNewLeader(currentPartition.get)} to $node")
-      node.ref ! IAmTheNewLeader(currentPartition.get)
+      logInfo(s"(a) $applicationRef: sending a new version of the partition ${IAmTheNewLeader(currentPartition.get)} to $node")
+      send(node, IAmTheNewLeader(currentPartition.get))
     })
 
     val computationResult = computeEntropy()
     computationResult match{
       case solution: ReconfigurationSolution => {
-        log.info(s"(1) the partition $currentPartition is enough to reconfigure")
+        logInfo(s"(1) the partition $currentPartition is enough to reconfigure")
 
         applySolution(solution)
 
 
-        log.info(s"(a) I decide to dissolve $currentPartition")
+        logInfo(s"(a) I decide to dissolve $currentPartition")
         currentPartition.get.nodes.foreach(node => {
-          node.ref ! DissolvePartition("violation resolved")
+          send(node, DissolvePartition("violation resolved"))
         })
       }
       case ReconfigurationlNoSolution() => {
 
-        log.info(s"(1a) the partition $currentPartition is not enough to reconfigure," +
+        logInfo(s"(1a) the partition $currentPartition is not enough to reconfigure," +
           s" I try to find another node for the partition, deadlock? ${currentPartition.get.nodes.contains(firstOut)}")
 
         firstOut match {
           case Some(existingNode) =>
-            log.info(s"(Y) $applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
-            existingNode.ref ! TransmissionOfAnISP(currentPartition.get)
+            logInfo(s"(Y) $applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
+            send(existingNode, TransmissionOfAnISP(currentPartition.get))
           case None =>
-            log.info(s"(Y) $applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
+            logInfo(s"(Y) $applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
         }
       }
     }
@@ -136,30 +127,30 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
     }
   }
 
-  def remoteNodeFailureDetected(node: NodeRef) {
+  def remoteNodeFailureDetected(node: SGNodeRef) {
     currentPartition match {
       case Some(p) => {
         if (p.nodes.contains(node)) {
           node match {
             // the initiator of the partition has crashed
-            case node: NodeRef if (node.location isEqualTo p.initiator.location) => {
+            case node: SGNodeRef if (node isEqualTo p.initiator) => {
 
-              log.info(s"$applicationRef: The initiator ($node) has crashed, I am becoming the new leader of $currentPartition")
+              logInfo(s"$applicationRef: The initiator ($node) has crashed, I am becoming the new leader of $currentPartition")
 
               // the partition will be dissolved
-              p.nodes.filterNot(n => n.location isEqualTo node.location).foreach(n => {
-                n.ref ! DissolvePartition("initiator crashed")
+              p.nodes.filterNot(n => n isEqualTo node).foreach(n => {
+                send(n, DissolvePartition("initiator crashed"))
               })
             }
 
             // the leader or a normal node of the partition has crashed
-            case node: NodeRef => {
+            case node: SGNodeRef => {
 
               // creation of a new partition without the crashed node
               val newPartition: DvmsPartition = new DvmsPartition(
                 applicationRef,
                 p.initiator,
-                p.nodes.filterNot(n => n.location isEqualTo node.location),
+                p.nodes.filterNot(n => n isEqualTo node),
                 p.state,
                 UUID.randomUUID()
               )
@@ -169,10 +160,10 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
               lastPartitionUpdateDate = Some(new Date())
 
-              log.info(s"$applicationRef: A node crashed ($node), I am becoming the new leader of $currentPartition")
+              logInfo(s"$applicationRef: A node crashed ($node), I am becoming the new leader of $currentPartition")
 
               newPartition.nodes.foreach(node => {
-                node.ref ! IAmTheNewLeader(newPartition)
+                send(node, IAmTheNewLeader(newPartition))
               })
             }
           }
@@ -183,12 +174,14 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
   }
 
-  override def receive = {
+  def receive(message: Object, sender: SGNodeRef, returnCanal: SGNodeRef) = {
 
     case IsThisVersionOfThePartitionStillValid(partition) => {
       currentPartition match {
-        case Some(p) => sender ! partition.id.equals(currentPartition.get.id)
-        case None => sender ! false
+        case Some(p) =>
+          send(sender, partition.id.equals(currentPartition.get.id))
+        case None =>
+          send(sender, false)
       }
     }
 
@@ -199,9 +192,9 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
     case CheckTimeout() => {
 
-      //         log.info(s"$applicationRef: check if we have reach the timeout of partition")
+      //         logInfo(s"$applicationRef: check if we have reach the timeout of partition")
 
-//      log.info("checkTimeout")
+//      logInfo("checkTimeout")
       printDetails()
 
       (currentPartition, lastPartitionUpdateDate) match {
@@ -212,10 +205,10 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
           if (duration > DvmsActor.partitionUpdateTimeout) {
 
-            log.info(s"$applicationRef: timeout of partition has been reached: I dissolve everything")
+            logInfo(s"$applicationRef: timeout of partition has been reached: I dissolve everything")
 
             p.nodes.foreach(n => {
-              n.ref ! DissolvePartition("timeout")
+              send(n, DissolvePartition("timeout"))
             })
           }
 
@@ -227,7 +220,7 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
     case CanIMergePartitionWithYou(partition, contact) => {
 
-      sender ! (!lockedForFusion)
+      send(sender, (!lockedForFusion))
 
       if (!lockedForFusion) {
         lockedForFusion = true
@@ -238,9 +231,9 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
       currentPartition match {
         case Some(p) =>
-          log.info(s"$applicationRef: I dissolve the partition $p, because <$reason>")
+          logInfo(s"$applicationRef: I dissolve the partition $p, because <$reason>")
         case None =>
-          log.info(s"$applicationRef: I dissolve the partition None, because <$reason>")
+          logInfo(s"$applicationRef: I dissolve the partition None, because <$reason>")
       }
 
 
@@ -255,7 +248,7 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
     case IAmTheNewLeader(partition) => {
 
-      log.info(s"$applicationRef: ${partition.leader} is the new leader of $partition")
+      logInfo(s"$applicationRef: ${partition.leader} is the new leader of $partition")
 
       val outdatedUpdate: Boolean = (currentPartition, partition.state) match {
         case (None, Finishing()) => true
@@ -285,16 +278,16 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
     case msg@TransmissionOfAnISP(partition) => {
 
-      log.info(s"received an ISP: $msg @$currentPartition and @$firstOut")
+      logInfo(s"received an ISP: $msg @$currentPartition and @$firstOut")
       printDetails()
 
       currentPartition match {
         case Some(p) => p match {
           // the ISP went back to it's initiator for the first time
-          case _ if ((partition.initiator.location isEqualTo p.initiator.location)
+          case _ if ((partition.initiator isEqualTo p.initiator)
             && (partition.state isEqualTo Growing())) => {
 
-            log.info(s"$applicationRef: the partition $partition went back to it's initiator" +
+            logInfo(s"$applicationRef: the partition $partition went back to it's initiator" +
               s" with a Growing state: it becomes blocked :s")
 
 
@@ -302,70 +295,70 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
             // the state of the current partition become Blocked()
             p.nodes.foreach(node => {
-              node.ref ! ChangeTheStateOfThePartition(Blocked())
+              send(node, ChangeTheStateOfThePartition(Blocked()))
             })
 
 
             firstOut match {
               case Some(existingNode) =>
-                log.info(s"(X) $applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
-                existingNode.ref ! TransmissionOfAnISP(currentPartition.get)
+                logInfo(s"(X) $applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
+                send(existingNode, TransmissionOfAnISP(currentPartition.get))
               case None =>
-                log.info(s"(X) $applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
+                logInfo(s"(X) $applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
             }
 
 
 
           }
           // the ISP went back to it's initiator for the second time
-          case _ if ((partition.initiator.location isEqualTo p.initiator.location)
+          case _ if ((partition.initiator isEqualTo p.initiator)
             && (partition.state isEqualTo Blocked())) => {
 
-            log.info(s"$applicationRef: the partition $partition went back to it's initiator" +
+            logInfo(s"$applicationRef: the partition $partition went back to it's initiator" +
               s" with a Blocked state: it dissolve it :(")
             // the currentPartition should be dissolved
             p.nodes.foreach(node => {
-              node.ref ! DissolvePartition("back to initiator with a blocked state")
+              send(node, DissolvePartition("back to initiator with a blocked state"))
             })
 
           }
           // the incoming ISP is different from the current ISP and the current state is not Blocked
-          case _ if ((partition.initiator.location isDifferentFrom p.initiator.location)
+          case _ if ((partition.initiator isDifferentFrom p.initiator)
             && (p.state isEqualTo Growing())) => {
 
             // I forward the partition to the current firstOut
             firstOut match {
               case Some(existingNode) =>
-                log.info(s"$applicationRef: forwarding $msg to $firstOut")
-                firstOut.get.ref.forward(msg)
+                logInfo(s"$applicationRef: forwarding $msg to $firstOut")
+                forward(firstOut.get, sender, msg)
               case None =>
-                log.info(s"$applicationRef: cannot forward to firstOut")
+                logInfo(s"$applicationRef: cannot forward to firstOut")
             }
 
 
           }
           // the incoming ISP is different from the current ISP and the current state is Blocked
           //   ==> we may merge!
-          case _ if ((partition.initiator.location isDifferentFrom p.initiator.location)
+          case _ if ((partition.initiator isDifferentFrom p.initiator)
             && (p.state isEqualTo Blocked())) => {
 
             partition.state match {
               case Blocked() => {
 
-                if (partition.initiator.location isSuperiorThan p.initiator.location) {
-                  log.info(s"$applicationRef: may merge $p with $partition")
+                if (partition.initiator isSuperiorThan p.initiator) {
+                  logInfo(s"$applicationRef: may merge $p with $partition")
 
 
                   lockedForFusion = true
-                  val willMerge: Boolean = Await.result(sender ? CanIMergePartitionWithYou(p, applicationRef), 1 second).asInstanceOf[Boolean]
+                  val willMerge: Boolean = ask(sender, CanIMergePartitionWithYou(p, applicationRef)).asInstanceOf[Boolean]
 
-                  log.info(s"$applicationRef got a result $willMerge")
+                  logInfo(s"$applicationRef got a result $willMerge")
 
                   willMerge match {
                     case true => {
                       lockedForFusion = true
 
-                      log.info(s"$applicationRef is effectively merging partition $p with $partition")
+                      logInfo(s"$applicationRef is effectively merging partition $p with $partition")
 
                       mergeWithThisPartition(partition)
                     }
@@ -376,11 +369,11 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
                   firstOut match {
                     case Some(existingNode) =>
                       // the order between nodes is not respected, the ISP should be forwarded
-                      log.info(s"$applicationRef: order between nodes is not respected, I forward $partition to $existingNode")
-                      existingNode.ref.forward(msg)
+                      logInfo(s"$applicationRef: order between nodes is not respected, I forward $partition to $existingNode")
+                      forward(existingNode, sender, msg)
                     case None =>
                       // the order between nodes is not respected, the ISP should be forwarded
-                      log.info(s"bug:$applicationRef: cannot forward $partition to $firstOut")
+                      logInfo(s"bug:$applicationRef: cannot forward $partition to $firstOut")
                   }
 
                 }
@@ -390,10 +383,10 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
               case Finishing() =>  {
                 firstOut match {
                   case Some(existingNode) =>
-                    log.info(s"$applicationRef: forwarding $msg to $firstOut")
-                    firstOut.get.ref.forward(msg)
+                    logInfo(s"$applicationRef: forwarding $msg to $firstOut")
+                    forward(existingNode, sender, msg)
                   case None =>
-                    log.info(s"$applicationRef: cannot forward to firstOut")
+                    logInfo(s"$applicationRef: cannot forward to firstOut")
                 }
               }
 
@@ -401,10 +394,10 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
                 firstOut match {
                   case Some(existingNode) =>
-                    log.info(s"$applicationRef: forwarding $msg to $firstOut")
-                    firstOut.get.ref.forward(msg)
+                    logInfo(s"$applicationRef: forwarding $msg to $firstOut")
+                    forward(existingNode, sender, msg)
                   case None =>
-                    log.info(s"$applicationRef: cannot forward to firstOut")
+                    logInfo(s"$applicationRef: cannot forward to firstOut")
                 }
 
               }
@@ -414,10 +407,10 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
           case _ => {
             firstOut match {
               case Some(existingNode) =>
-                log.info(s"$applicationRef: forwarding $msg to $firstOut (forward-bis)")
-                firstOut.get.ref.forward(msg)
+                logInfo(s"$applicationRef: forwarding $msg to $firstOut (forward-bis)")
+                forward(existingNode, sender, msg)
               case None =>
-                log.info(s"$applicationRef: cannot forward to firstOut (forward-bis)")
+                logInfo(s"$applicationRef: cannot forward to firstOut (forward-bis)")
             }
           }
         }
@@ -430,13 +423,11 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
             try {
 
               // TODO: there was a mistake reported here!
+              partitionIsStillValid = ask(partition.initiator, IsThisVersionOfThePartitionStillValid(partition)).asInstanceOf[Boolean]
 
-              partitionIsStillValid = Await.result(partition.initiator.ref ?
-                IsThisVersionOfThePartitionStillValid(partition), 1 second
-              ).asInstanceOf[Boolean]
             } catch {
               case e: Throwable => {
-                log.info(s"Partition $partition is no more valid (Exception")
+                logInfo(s"Partition $partition is no more valid (Exception")
                 e.printStackTrace()
                 partitionIsStillValid = false
               }
@@ -447,7 +438,7 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
           if (partitionIsStillValid) {
 
             // the current node is becoming the leader of the incoming ISP
-            log.info(s"$applicationRef: I am becoming the new leader of $partition")
+            logInfo(s"$applicationRef: I am becoming the new leader of $partition")
 
             val newPartition: DvmsPartition = new DvmsPartition(
               applicationRef,
@@ -465,8 +456,8 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 //            applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
 
             partition.nodes.foreach(node => {
-              log.info(s"$applicationRef: sending the $newPartition to $node")
-              node.ref ! IAmTheNewLeader(newPartition)
+              logInfo(s"$applicationRef: sending the $newPartition to $node")
+              send(node, IAmTheNewLeader(newPartition))
             })
 
             lastPartitionUpdateDate = Some(new Date())
@@ -477,7 +468,7 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
             computationResult match {
               case solution: ReconfigurationSolution => {
-                log.info("(A) Partition was enough to reconfigure ")
+                logInfo("(A) Partition was enough to reconfigure ")
 
 
                 val newPartition: DvmsPartition = new DvmsPartition(
@@ -495,9 +486,10 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
                 // Alert LogginActor that the current node is booked in a partition
 //                applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
 
-                partition.nodes.filter(n => n.location.isDifferentFrom(applicationRef.location)).foreach(node => {
-                  log.info(s"$applicationRef: sending the $newPartition to $node")
-                  node.ref ! IAmTheNewLeader(newPartition)
+                partition.nodes.filter(n => n.isDifferentFrom(applicationRef)).foreach(node => {
+                  logInfo(s"$applicationRef: sending the $newPartition to $node")
+//                  node.ref ! IAmTheNewLeader(newPartition)
+                  send(node, IAmTheNewLeader(newPartition))
                 })
 
                 lastPartitionUpdateDate = Some(new Date())
@@ -507,38 +499,71 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 
                 // it was enough: the partition is no more useful
                 currentPartition.get.nodes.foreach(node => {
-                  node.ref ! DissolvePartition("violation resolved")
+//                  node.ref ! DissolvePartition("violation resolved")
+                  send(node, DissolvePartition("violation resolved"))
                 })
               }
               case ReconfigurationlNoSolution() => {
 
                 firstOut match {
                   case Some(existingNode) =>
-                    log.info(s"(A) Partition was not enough to reconfigure, forwarding to $existingNode")
-                    existingNode.ref ! TransmissionOfAnISP(currentPartition.get)
+                    logInfo(s"(A) Partition was not enough to reconfigure, forwarding to $existingNode")
+                    send(existingNode, TransmissionOfAnISP(currentPartition.get))
                   case None =>
-                    log.info(s"(A) $applicationRef : ${currentPartition.get} was not forwarded to nobody")
+                    logInfo(s"(A) $applicationRef : ${currentPartition.get} was not forwarded to nobody")
                 }
               }
             }
           } else {
-            log.warning(s"$applicationRef: $partition is no more valid (source: ${partition.initiator})")
+            logWarning(s"$applicationRef: $partition is no more valid (source: ${partition.initiator})")
           }
         }
       }
     }
 
-    case CpuViolationDetected() => {
+    case s"faultDetected" => {
 
+          currentPartition match {
+            case None => {
+              logInfo("Dvms has detected a new cpu violation")
+              printDetails()
+
+              //          firstOut = Some(nextDvmsNode)
+
+              currentPartition = Some(DvmsPartition(
+                applicationRef,
+                applicationRef,
+                List(applicationRef),
+                Growing(),
+                UUID.randomUUID()
+              ))
+
+              lastPartitionUpdateDate = Some(new Date())
+
+              // Alert LogginActor that the current node is booked in a partition
+      //        applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
+
+              firstOut match {
+                case Some(existingNode) =>
+                  logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
+                  send(existingNode, TransmissionOfAnISP(currentPartition.get))
+                case None =>
+                  logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
+              }
+
+            }
+            case _ =>
+              println(s"violation detected: this is my Partition [$currentPartition]")
+          }
 
     }
 
     case ThisIsYourNeighbor(node) => {
-//      log.info(s"my neighbor has changed: $node")
+//      logInfo(s"my neighbor has changed: $node")
 //      nextDvmsNode = node
     }
 
-    case YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[NodeRef], newNeighbor: NodeRef) => {
+    case YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[SGNodeRef], newNeighbor: SGNodeRef) => {
 
 //      (firstOut, oldNeighbor) match {
 //        case (Some(fo), Some(n)) if (fo.location isEqualTo n.location) => firstOut = Some(newNeighbor)
@@ -546,24 +571,20 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 //      }
     }
 
-    case msg => applicationRef.ref.forward(msg)
+    case msg => forward(applicationRef, sender, msg)
   }
 
 
   def computeEntropy(): ReconfigurationResult = {
 
-    log.info("computeEntropy (1)")
-
-    val entropyComputeAsFuture: Future[ReconfigurationResult] = (
-      (applicationRef.ref ? EntropyComputeReconfigurePlan(currentPartition.get.nodes)) recover {
-         case _: Throwable => ReconfigurationlNoSolution()
-      }
-   ).mapTo[ReconfigurationResult]
+    logInfo("computeEntropy (1)")
 
 
-    val computationResult = Await.result(entropyComputeAsFuture, 4 seconds)
+    // TODO: reimplement call to entropy actor
+    println("Please reimplement the call to entropy Actor")
+    val computationResult = ReconfigurationlNoSolution()
 
-    log.info("computeEntropy (2)")
+    logInfo("computeEntropy (2)")
 
     computationResult
   }
@@ -591,8 +612,8 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
             currentPartition = Some(newPartition)
 
             partition.nodes.foreach(node => {
-              log.info(s"$applicationRef: updating the $newPartition to $node (to prevent timeout)")
-              node.ref ! IAmTheNewLeader(newPartition)
+              logInfo(s"$applicationRef: updating the $newPartition to $node (to prevent timeout)")
+              send(node, IAmTheNewLeader(newPartition))
             })
 
             Thread.sleep(500)
@@ -607,23 +628,23 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
         continueToUpdatePartition = false
 
         partition.nodes.foreach(node => {
-          log.info(s"$applicationRef: reconfiguration plan has been applied, dissolving partition $partition")
-          node.ref ! DissolvePartition("Reconfiguration plan has been applied")
+          logInfo(s"$applicationRef: reconfiguration plan has been applied, dissolving partition $partition")
+          send(node, DissolvePartition("Reconfiguration plan has been applied"))
         })
 
 
       case None =>
-        log.info("cannot apply reconfigurationSolution: current partition is undefined")
+        logInfo("cannot apply reconfigurationSolution: current partition is undefined")
     }
   }
 
 
   def printDetails() {
-//    log.info(s"currentPartition: $currentPartition")
-//    log.info(s"firstOut: $firstOut")
-//    log.info(s"DvmsNextNode: $nextDvmsNode")
-//    log.info(s"lastPartitionUpdate: $lastPartitionUpdateDate")
-//    log.info(s"lockedForFusion: $lockedForFusion")
+//    logInfo(s"currentPartition: $currentPartition")
+//    logInfo(s"firstOut: $firstOut")
+//    logInfo(s"DvmsNextNode: $nextDvmsNode")
+//    logInfo(s"lastPartitionUpdate: $lastPartitionUpdateDate")
+//    logInfo(s"lockedForFusion: $lockedForFusion")
   }
 
   // registering an event: when a CpuViolation is triggered, CpuViolationDetected() is sent to dvmsActor
@@ -637,7 +658,7 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 //
 //    currentPartition match {
 //      case None => {
-//        log.info("Dvms has detected a new cpu violation")
+//        logInfo("Dvms has detected a new cpu violation")
 //        printDetails()
 //
 //        //          firstOut = Some(nextDvmsNode)
@@ -657,10 +678,10 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
 //
 //        firstOut match {
 //          case Some(existingNode) =>
-//            log.info(s"$applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
+//            logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
 //            existingNode.ref ! TransmissionOfAnISP(currentPartition.get)
 //          case None =>
-//            log.info(s"$applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
+//            logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
 //        }
 //
 //      }
@@ -672,10 +693,14 @@ class DvmsActor(applicationRef: NodeRef, overlayService: OverlayService) extends
   // registering a timer that will check if the node is in a partition and then if there is an activity from
   // this partition
 
-  context.system.scheduler.schedule(0 milliseconds,
-    500 milliseconds,
-    self,
-    CheckTimeout())
+    while (true) {
+      send(self ,CheckTimeout())
+      Thread.sleep(500)
+    }
+//  context.system.scheduler.schedule(0 milliseconds,
+//    500 milliseconds,
+//    self,
+//    CheckTimeout())
 
 
 }

@@ -19,7 +19,7 @@ package org.discovery.dvms.entropy;
  * limitations under the License.
  * ============================================================ */
 
-import akka.actor.ActorRef;
+//import akka.actor.ActorRef;
 import dvms.scheduling.ComputingState;
 import entropy.configuration.Configuration;
 import entropy.configuration.SimpleManagedElementSet;
@@ -33,10 +33,6 @@ import entropy.plan.choco.ChocoCustomRP;
 import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
-//import org.discovery.dvms.configuration.DvmsConfiguration;
-//import org.discovery.dvms.configuration.ExperimentConfiguration;
-import org.discovery.dvms.dvms.DvmsModel.PhysicalNode;
-//import org.discovery.dvms.log.LoggingProtocol;
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.*;
 
 import java.util.*;

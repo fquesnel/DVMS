@@ -1,9 +1,6 @@
 package org.discovery.dvms.dvms
 
-import org.discovery.AkkaArc.util.NodeRef
-import org.discovery.dvms.dvms.DvmsModel._
-import java.util.UUID
-import akka.pattern.AskTimeoutException
+
 
 /* ============================================================
  * Discovery Project - DVMS
@@ -24,29 +21,31 @@ import akka.pattern.AskTimeoutException
  * limitations under the License.
  * ============================================================ */
 
+import org.discovery.dvms.dvms.DvmsModel._
+import scheduling.dvms2.SGNodeRef
 
 trait DvmsMessage
 
 object DvmsProtocol {
 
-   case class ThisIsYourNeighbor(neighbor: NodeRef) extends DvmsMessage
-   case class YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[NodeRef], newNeighbor: NodeRef) extends DvmsMessage
-   case class CpuViolationDetected() extends DvmsMessage
+   case class ThisIsYourNeighbor(neighbor: SGNodeRef)
+   case class YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[SGNodeRef], newNeighbor: SGNodeRef)
+   case class CpuViolationDetected()
 
    // Message used for the base of DVMS
-   case class DissolvePartition(reason: String) extends DvmsMessage
-   case class TransmissionOfAnISP(currentPartition: DvmsPartition) extends DvmsMessage
-   case class IAmTheNewLeader(partition: DvmsPartition) extends DvmsMessage
+   case class DissolvePartition(reason: String)
+   case class TransmissionOfAnISP(currentPartition: DvmsPartition)
+   case class IAmTheNewLeader(partition: DvmsPartition)
 
    // Message used for the merge of partitions
-   case class IsThisVersionOfThePartitionStillValid(partition: DvmsPartition) extends DvmsMessage
-   case class CanIMergePartitionWithYou(partition: DvmsPartition, contact: NodeRef) extends DvmsMessage
-   case class ChangeTheStateOfThePartition(newState: DvmsPartititionState) extends DvmsMessage
+   case class IsThisVersionOfThePartitionStillValid(partition: DvmsPartition)
+   case class CanIMergePartitionWithYou(partition: DvmsPartition, contact: SGNodeRef)
+   case class ChangeTheStateOfThePartition(newState: DvmsPartititionState)
 
    // Message for the resiliency
-   case class AskTimeoutDetected(e: AskTimeoutException) extends DvmsMessage
-   case class FailureDetected(node: NodeRef) extends DvmsMessage
-   case class CheckTimeout() extends DvmsMessage
+//   case class AskTimeoutDetected(e: AskTimeoutException)
+   case class FailureDetected(node: SGNodeRef)
+   case class CheckTimeout()
 
 
 }

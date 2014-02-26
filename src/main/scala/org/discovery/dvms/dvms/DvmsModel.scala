@@ -1,8 +1,5 @@
 package org.discovery.dvms.dvms
 
-import org.discovery.AkkaArc.util.NodeRef
-import java.util.UUID
-
 /* ============================================================
  * Discovery Project - DVMS
  * http://beyondtheclouds.github.io/
@@ -22,15 +19,18 @@ import java.util.UUID
  * limitations under the License.
  * ============================================================ */
 
+import java.util.UUID
+import scheduling.dvms2.SGNodeRef
+
 object DvmsModel {
 
 
    object DvmsPartition {
-      def apply(leader: NodeRef, initiator: NodeRef, nodes: List[NodeRef], state: DvmsPartititionState): DvmsPartition =
+      def apply(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState): DvmsPartition =
          DvmsPartition(leader, initiator, nodes, state, UUID.randomUUID())
    }
 
-   case class DvmsPartition(leader: NodeRef, initiator: NodeRef, nodes: List[NodeRef], state: DvmsPartititionState, id: UUID)
+   case class DvmsPartition(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState, id: UUID)
 
 
    object DvmsPartititionState {
@@ -77,7 +77,7 @@ object DvmsModel {
 
    case class ComputerSpecification(numberOfCPU: Int, ramCapacity: Int, coreCapacity: Int)
 
-   case class PhysicalNode(ref: NodeRef, machines: List[VirtualMachine], url: String, specs: ComputerSpecification)
+   case class PhysicalNode(ref: SGNodeRef, machines: List[VirtualMachine], url: String, specs: ComputerSpecification)
 
    case class VirtualMachine(name: String, cpuConsumption: Double, specs: ComputerSpecification)
 }

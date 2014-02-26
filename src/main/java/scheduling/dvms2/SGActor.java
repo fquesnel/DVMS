@@ -23,34 +23,6 @@ public class SGActor extends Process {
         return ref;
     }
 
-	public void send(SGNodeRef node, Object message){
-		MsgForSG msg = new MsgForSG(message, 
-				node+"", ref.getName() ,null);
-		msg.send();
-	} 
-	public void forward(SGNodeRef dest, SGNodeRef origin, Object message){
-		MsgForSG msg = new MsgForSG(message, dest+"",
-				origin+"",null);
-		msg.send();
-	}
-	public Object ask(SGNodeRef node, Object message){
-		MsgForSG msg = new MsgForSG(message, 
-				node+"", node+"",Host.currentHost().getName()+":"+ Math.random());
-		msg.send(); 
-		MsgForSG reply;
-		try {
-			reply = (MsgForSG) Task.receive(msg.getReplyBox());
-			return reply.getMessage();
-		} catch (TransferFailureException e) {
-			e.printStackTrace();
-		} catch (HostFailureException e) {
-			e.printStackTrace();
-		} catch (TimeoutException e) {
-			e.printStackTrace();
-		}
-		return null; 
-	}
-
     public void main(String[] args) {
 
         try {
@@ -64,6 +36,35 @@ public class SGActor extends Process {
 
             e.printStackTrace();
         }
+    }
+
+    public void send(SGNodeRef node, Object message){
+        MsgForSG msg = new MsgForSG(message,
+                node+"", name ,null);
+        msg.send();
+    }
+    public void forward(SGNodeRef dest, SGNodeRef origin, Object message){
+        MsgForSG msg = new MsgForSG(message, dest+"",
+                origin+"",null);
+        msg.send();
+    }
+
+    public Object ask(SGNodeRef node, Object message){
+        MsgForSG msg = new MsgForSG(message,
+                node+"", node+"", Host.currentHost().getName()+":"+ Math.random());
+        msg.send();
+        MsgForSG reply;
+        try {
+            reply = (MsgForSG) Task.receive(msg.getReplyBox());
+            return reply.getMessage();
+        } catch (TransferFailureException e) {
+            e.printStackTrace();
+        } catch (HostFailureException e) {
+            e.printStackTrace();
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }	
 

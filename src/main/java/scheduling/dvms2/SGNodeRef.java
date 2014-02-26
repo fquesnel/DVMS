@@ -1,5 +1,7 @@
 package scheduling.dvms2;
 
+import org.simgrid.msg.*;
+
 public class SGNodeRef {
 
 	String name;
@@ -41,7 +43,7 @@ public class SGNodeRef {
     }
 
     public boolean isSuperiorThan(SGNodeRef otherRef) {
-
+        System.out.println("Please reimplement call to isSuperiorThan");
         return true;
     }
 }
