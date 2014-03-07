@@ -19,33 +19,32 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
-import org.discovery.AkkaArc.util.NodeRef
-import akka.actor.{ActorLogging, Actor}
-import akka.util.Timeout
+import scheduling.dvms2.{SGNodeRef, SGActor}
 import concurrent.ExecutionContext
 import java.util.concurrent.Executors
 import scala.concurrent.duration._
 import org.discovery.dvms.entropy.EntropyProtocol._
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.ReconfigurationResult
 
-abstract class AbstractEntropyActor(applicationRef: NodeRef) extends Actor with ActorLogging {
+abstract class AbstractEntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
-   implicit val timeout = Timeout(2 seconds)
+//   implicit val timeout = Timeout(2 seconds)
    implicit val ec = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 
 
-   def computeReconfigurationPlan(nodes: List[NodeRef]): ReconfigurationResult
+   def computeReconfigurationPlan(nodes: List[SGNodeRef]): ReconfigurationResult
 
-   override def receive = {
-      case EntropyComputeReconfigurePlan(nodes) => {
-         sender ! computeReconfigurationPlan(nodes)
+  def receive(message: Object, sender: SGNodeRef, returnCanal: SGNodeRef) = message match {
+
+      case EntropyComputeReconfigurePlan(nodes: List[SGNodeRef]) => {
+         send(sender, computeReconfigurationPlan(nodes))
       }
 
       case MigrateVirtualMachine(vmName, nodeName) =>
-         log.info(s"[libvirt is not enabled], cannot migrate $vmName to $nodeName")
+         println(s"[libvirt is not enabled], cannot migrate $vmName to $nodeName")
 
       case msg => {
-         applicationRef.ref ! msg
+        send(applicationRef, msg)
       }
    }
 }

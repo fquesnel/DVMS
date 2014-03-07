@@ -4,6 +4,8 @@ package simulation;
 import dvms.log.Logger;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import scheduling.dvms2.DVMSProcess;
+import scheduling.dvms2.MonitorProcess;
 //import scheduling.dvms2.DVMSProcess;
 //import scheduling.dvms2.MonitorProcess;
 
@@ -22,7 +24,7 @@ public class DistributedResolver extends Process {
             int port,//Information for associated DVMSServer
             String neighborHostname, int neighborPort){//Information for neighbor DVMSServer
 	
-/*        try {
+       try {
 
             DVMSProcess dmvsProcess = new DVMSProcess( this.getHost(), nodeId, port, neighborHostname, neighborPort);
             dmvsProcess.start();
@@ -42,7 +44,7 @@ public class DistributedResolver extends Process {
             Logger.flushAndClose();
             e.printStackTrace();
         }
-*/
+
     }
 
 

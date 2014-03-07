@@ -19,14 +19,13 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
-import org.discovery.AkkaArc.util.{INetworkLocation, NodeRef}
-import org.discovery.model._
+import scheduling.dvms2.{SGNodeRef, SGActor}
 
 trait EntropyMessage
 
 object EntropyProtocol {
 
-   case class EntropyComputeReconfigurePlan(nodes: List[NodeRef]) extends EntropyMessage
-   case class MigrateVirtualMachine(vmName: String, destination: INetworkLocation) extends EntropyMessage
+   case class EntropyComputeReconfigurePlan(nodes: List[SGNodeRef]) extends EntropyMessage
+   case class MigrateVirtualMachine(vmName: String, destination: SGNodeRef) extends EntropyMessage
 
 }

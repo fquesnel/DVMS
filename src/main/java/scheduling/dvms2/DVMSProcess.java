@@ -2,8 +2,8 @@ package scheduling.dvms2;
 
 import java.net.UnknownHostException;
 
-import dvms_scala.DvmsActor;
-import dvms_scala.ThisIsYourNeighbor;
+import org.discovery.dvms.dvms.DvmsActor;
+import org.discovery.dvms.dvms.DvmsProtocol;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.MsgException;
@@ -95,7 +95,7 @@ public class DVMSProcess extends Process {
         // WARNING this is just a simple string
         // pattern: Host.currentHost().getName()+"-dvms"
         // ex: node1-dvms
-        this.dvms.send(dvms.self(), new ThisIsYourNeighbor(next));
+        this.dvms.send(dvms.self(), new DvmsProtocol.ThisIsYourNeighbor(next));
 
     }
 }

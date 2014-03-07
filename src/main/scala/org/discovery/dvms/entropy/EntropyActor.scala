@@ -20,32 +20,20 @@ package org.discovery.dvms.entropy
  * ============================================================ */
 
 // TODO à fusionner avec dvms_scala/EntropyActor de SimgridInjector
-import org.discovery.AkkaArc.util.{NetworkLocation, NodeRef}
+import scheduling.dvms2.{SGNodeRef, SGActor}
 import entropy.plan.choco.ChocoCustomRP
-import entropy.configuration.{SimpleConfiguration, SimpleVirtualMachine, SimpleNode, Configuration}
 import entropy.plan.durationEvaluator.MockDurationEvaluator
-import concurrent.Future
-import scala.collection.JavaConversions._
-//import org.discovery.dvms.monitor.LibvirtMonitorDriver
-import org.discovery.model._
-import org.discovery.driver.Node
-import scala.concurrent.Await
-import akka.pattern.ask
-import scala.concurrent.duration._
-//import collection.immutable.HashMap
-//import org.discovery.dvms.monitor.MonitorProtocol.GetVmsWithConsumption
-import org.discovery.dvms.dvms.DvmsModel.PhysicalNode
 import org.discovery.dvms.entropy.EntropyProtocol.MigrateVirtualMachine
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationlNoSolution, ReconfigurationResult}
 
-class EntropyActor(applicationRef: NodeRef) extends AbstractEntropyActor(applicationRef) {
+class EntropyActor(applicationRef: SGNodeRef) extends AbstractEntropyActor(applicationRef) {
 
   val planner: ChocoCustomRP = new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));
   planner.setTimeLimit(3);
 
   //   def computeReconfigurationPlan(nodes: List[NodeRef]): Boolean = {
 
-  def computeReconfigurationPlan(nodes: List[NodeRef]): ReconfigurationResult = {
+  def computeReconfigurationPlan(nodes: List[SGNodeRef]): ReconfigurationResult = {
 
 //    val initialConfiguration: Configuration = new SimpleConfiguration();
 //
@@ -91,7 +79,7 @@ class EntropyActor(applicationRef: NodeRef) extends AbstractEntropyActor(applica
   }
 
 
-  override def receive = {
+  override def receive(message: Object, sender: SGNodeRef, returnCanal: SGNodeRef) = message match {
 
     case MigrateVirtualMachine(vmName, destination) => {
       // Todo: reimplement this
@@ -99,6 +87,6 @@ class EntropyActor(applicationRef: NodeRef) extends AbstractEntropyActor(applica
 
     }
 
-    case msg => super.receive(msg)
+    case msg => super.receive(msg, sender, returnCanal)
   }
 }

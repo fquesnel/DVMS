@@ -29,6 +29,7 @@ import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
 //import org.discovery.dvms.entropy.EntropyProtocol.{EntropyComputeReconfigurePlan}
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 import scheduling.dvms2.{SGNodeRef, SGActor}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object DvmsActor {
   val partitionUpdateTimeout: FiniteDuration = 3500 milliseconds
@@ -174,7 +175,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   }
 
-  def receive(message: Object, sender: SGNodeRef, returnCanal: SGNodeRef) = {
+  def receive(message: Object, sender: SGNodeRef, returnCanal: SGNodeRef) = message match {
 
     case IsThisVersionOfThePartitionStillValid(partition) => {
       currentPartition match {
@@ -195,7 +196,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       //         logInfo(s"$applicationRef: check if we have reach the timeout of partition")
 
 //      logInfo("checkTimeout")
-      printDetails()
+//      printDetails()
 
       (currentPartition, lastPartitionUpdateDate) match {
         case (Some(p), Some(d)) => {
@@ -279,7 +280,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     case msg@TransmissionOfAnISP(partition) => {
 
       logInfo(s"received an ISP: $msg @$currentPartition and @$firstOut")
-      printDetails()
+//      printDetails()
 
       currentPartition match {
         case Some(p) => p match {
@@ -521,12 +522,12 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       }
     }
 
-    case s"faultDetected" => {
+    case "faultDetected" => {
 
           currentPartition match {
             case None => {
               logInfo("Dvms has detected a new cpu violation")
-              printDetails()
+//              printDetails()
 
               //          firstOut = Some(nextDvmsNode)
 
@@ -639,70 +640,15 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
   }
 
 
-  def printDetails() {
-//    logInfo(s"currentPartition: $currentPartition")
-//    logInfo(s"firstOut: $firstOut")
-//    logInfo(s"DvmsNextNode: $nextDvmsNode")
-//    logInfo(s"lastPartitionUpdate: $lastPartitionUpdateDate")
-//    logInfo(s"lockedForFusion: $lockedForFusion")
-  }
-
-  // registering an event: when a CpuViolation is triggered, CpuViolationDetected() is sent to dvmsActor
-
-  // TODO: modification de la manière d'enregistrer les événements
-  println("""/!\ UNIMPLEMENTED /!\: Dans DvmsActor, modification de la manière d'enregistrer les événements""");
-//  applicationRef.ref ! Register((e: MonitorEvent.CpuViolation) => {
-//
-//    // Alert LogginActor that a violation has been detected
-////    applicationRef.ref ! ViolationDetected(ExperimentConfiguration.getCurrentTime())
-//
-//    currentPartition match {
-//      case None => {
-//        logInfo("Dvms has detected a new cpu violation")
-//        printDetails()
-//
-//        //          firstOut = Some(nextDvmsNode)
-//
-//        currentPartition = Some(DvmsPartition(
-//          applicationRef,
-//          applicationRef,
-//          List(applicationRef),
-//          Growing(),
-//          UUID.randomUUID()
-//        ))
-//
-//        lastPartitionUpdateDate = Some(new Date())
-//
-//        // Alert LogginActor that the current node is booked in a partition
-////        applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
-//
-//        firstOut match {
-//          case Some(existingNode) =>
-//            logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
-//            existingNode.ref ! TransmissionOfAnISP(currentPartition.get)
-//          case None =>
-//            logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
-//        }
-//
-//      }
-//      case _ =>
-//        println(s"violation detected: this is my Partition [$currentPartition]")
-//    }
-//  })
-
-  // registering a timer that will check if the node is in a partition and then if there is an activity from
-  // this partition
-
-    while (true) {
-      send(self ,CheckTimeout())
-      Thread.sleep(500)
+  (new Thread() {
+    override def run() {
+      while (true) {
+        send(self ,CheckTimeout())
+        Thread.sleep(500)
+      }
     }
-//  context.system.scheduler.schedule(0 milliseconds,
-//    500 milliseconds,
-//    self,
-//    CheckTimeout())
-
-
+  }).start()
+  
 }
 
 

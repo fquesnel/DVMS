@@ -34,12 +34,12 @@ import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.*;
-
+import org.discovery.dvms.dvms.DvmsModel.*;
 import java.util.*;
 
 public class EntropyService {
 
-    public ActorRef loggingActorRef = null;
+//    public ActorRef loggingActorRef = null;
 
     private static EntropyService instance = null;
 
@@ -58,9 +58,9 @@ public class EntropyService {
         return instance;
     }
 
-    public static void setLoggingActorRef(ActorRef loggingActorRef) {
-        getInstance().loggingActorRef = loggingActorRef;
-    }
+//    public static void setLoggingActorRef(ActorRef loggingActorRef) {
+//        getInstance().loggingActorRef = loggingActorRef;
+//    }
 
     public ChocoCustomRP getPlanner() {
         return planner;
