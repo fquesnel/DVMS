@@ -26,6 +26,9 @@ import java.util.{Date, UUID}
 import org.discovery.dvms.dvms.DvmsProtocol._
 import org.discovery.dvms.dvms.DvmsModel._
 import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
+import org.simgrid.msg.{Msg, Host}
+import org.discovery.dvms.entropy.EntropyActor
+
 //import org.discovery.dvms.entropy.EntropyProtocol.{EntropyComputeReconfigurePlan}
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 import scheduling.dvms2.{SGNodeRef, SGActor}
@@ -56,12 +59,16 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 //  val self: SGNodeRef = applicationRef
 
   def logInfo(msg: String) {
-    println(s"$msg")
+    Msg.info(s"$msg")
+//    println(s"$msg")
   }
 
   def logWarning(msg: String) {
-    println(s"$msg")
+    Msg.info(s"$msg")
+//    println(s"$msg")
   }
+
+  val entropyActor = new EntropyActor(applicationRef)
 
   implicit def selfSender: SGNodeRef = self
 
@@ -554,14 +561,14 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
             }
             case _ =>
-              println(s"violation detected: this is my Partition [$currentPartition]")
+//              println(s"violation detected: this is my Partition [$currentPartition]")
           }
 
     }
 
     case ThisIsYourNeighbor(node) => {
 //      logInfo(s"my neighbor has changed: $node")
-//      nextDvmsNode = node
+      firstOut = Some(node)
     }
 
     case YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[SGNodeRef], newNeighbor: SGNodeRef) => {
@@ -583,7 +590,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     // TODO: reimplement call to entropy actor
     println("Please reimplement the call to entropy Actor")
-    val computationResult = ReconfigurationlNoSolution()
+    val computationResult = entropyActor.computeReconfigurationPlan(currentPartition.get.nodes)
 
     logInfo("computeEntropy (2)")
 
@@ -598,29 +605,6 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       case Some(partition) =>
 
         var continueToUpdatePartition: Boolean = true
-
-        Future {
-          while(continueToUpdatePartition) {
-
-            val newPartition: DvmsPartition = new DvmsPartition(
-              applicationRef,
-              partition.initiator,
-              partition.nodes,
-              partition.state,
-              UUID.randomUUID()
-            )
-
-            currentPartition = Some(newPartition)
-
-            partition.nodes.foreach(node => {
-              logInfo(s"$applicationRef: updating the $newPartition to $node (to prevent timeout)")
-              send(node, IAmTheNewLeader(newPartition))
-            })
-
-            Thread.sleep(500)
-          }
-        }
-
 
         // TODO: appliquer les migrations ici
         println("""/!\ UNIMPLEMENTED /!\: Dans DvmsActor, appliquer les migrations ici""");
@@ -638,17 +622,6 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         logInfo("cannot apply reconfigurationSolution: current partition is undefined")
     }
   }
-
-
-  (new Thread() {
-    override def run() {
-      while (true) {
-        send(self ,CheckTimeout())
-        Thread.sleep(500)
-      }
-    }
-  }).start()
-  
 }
 
 

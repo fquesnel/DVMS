@@ -26,7 +26,7 @@ public class DistributedResolver extends Process {
 	
        try {
 
-            DVMSProcess dmvsProcess = new DVMSProcess( this.getHost(), nodeId, port, neighborHostname, neighborPort);
+            DVMSProcess dmvsProcess = new DVMSProcess(this.getHost(), name,  nodeId, port, neighborHostname, neighborPort);
             dmvsProcess.start();
 
             MonitorProcess monitorProcess = new MonitorProcess(SimulatorManager.getXHostByName(host.getName()), nodeId, port, dmvsProcess.self(), dmvsProcess);

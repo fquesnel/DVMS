@@ -1,9 +1,6 @@
 package scheduling.dvms2;
 
-import org.simgrid.msg.HostFailureException;
-import org.simgrid.msg.Task;
-import org.simgrid.msg.TimeoutException;
-import org.simgrid.msg.TransferFailureException;
+import org.simgrid.msg.*;
 
 
 public class MsgForSG extends Task {
@@ -19,7 +16,7 @@ public class MsgForSG extends Task {
 
 
 	public MsgForSG(Object message, String sendBox , String origin, String replyBox) {
-		super("",0,ARBITRARY_MSG_SIZE); 
+		super("",0,ARBITRARY_MSG_SIZE);
 		this.message = message ;
 		this.sendBox = sendBox ;
 		this.replyBox = replyBox ;
@@ -42,6 +39,17 @@ public class MsgForSG extends Task {
     }
 
 	public void send() {
-			this.dsend(this.getSendBox());
+
+//        try {
+//            this.send(this.getSendBox());
+//        } catch (TransferFailureException e) {
+//            e.printStackTrace();
+//        } catch (HostFailureException e) {
+//            e.printStackTrace();
+//        } catch (TimeoutException e) {
+//            e.printStackTrace();
+//        }
+        this.isend(this.getSendBox());
+//        this.dsend(this.getSendBox());
 	}
 }

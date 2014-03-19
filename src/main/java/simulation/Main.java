@@ -60,7 +60,7 @@ public class Main {
     		   Msg.info("DVMS selected (generating deployment file)"); 
     		   String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getNbOfNodes()+" "+
     			   				SimulatorProperties.getNbOfCPUs()+ " "+
-    			   					SimulatorProperties.getCPUCapacity()+ " "+ 
+    			   					SimulatorProperties.getCPUCapacity()+ " "+
     			   						SimulatorProperties.getMemoryTotal()+" 23000 > config/generated_deploy.xml"};
     		   //"Usage: python generate.py nb_nodes nb_cpu total_cpu_cap ram port >
     		   Runtime.getRuntime().exec(cmd);

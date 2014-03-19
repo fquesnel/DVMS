@@ -2,6 +2,7 @@ package scheduling.dvms2;
 
 import java.net.UnknownHostException;
 
+import configuration.XHost;
 import org.discovery.dvms.dvms.DvmsActor;
 import org.discovery.dvms.dvms.DvmsProtocol;
 import org.simgrid.msg.Host;
@@ -28,17 +29,17 @@ public class DVMSProcess extends Process {
     //Constructor
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public DVMSProcess(Host host, String name, int port, String neighborHostname, int neighborPort) throws UnknownHostException  {
-        super(host, String.format("%s", name, port));
+    public DVMSProcess(Host host, String name, String hostname, int port, String neighborHostname, int neighborPort) throws UnknownHostException  {
+        super(host, String.format("%s", hostname, port));
 
-        this.name = String.format("%s", name, port);
+        this.name = String.format("%s", hostname, port);
         this.neighborName = String.format("%s", neighborHostname, port);
 
-        this.id = nameToId(name);
+        this.id = nameToId(hostname);
         this.neighborId = nameToId(neighborHostname);
 
 
-        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", name, port), id));
+        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id));
     }
 
     public SGNodeRef self() {
@@ -52,7 +53,7 @@ public class DVMSProcess extends Process {
         try {
             result = Long.parseLong(name.substring(4, name.length()));
         } catch(Exception e) {
-
+            e.printStackTrace();
         }
 
         return result;
@@ -68,10 +69,13 @@ public class DVMSProcess extends Process {
     @Override
     public void main(String[] args) throws MsgException {
 
-        mBox = this.name;
+//        dvms.start();
 
+        mBox = this.name;
+//
         Long nextId = nameToId(neighborName);
         this.updateNextNode(new SGNodeRef(neighborName, nextId));
+
 
         while(!SimulatorManager.isEndOfInjection()){
 
@@ -79,9 +83,9 @@ public class DVMSProcess extends Process {
 
                 MsgForSG req=(MsgForSG) Task.receive(mBox);
                 Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
-
+//
                 Long reqId = nameToId(req.getSender().getHost().getName());
-
+//
                 dvms.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
             } catch (Exception e) {
                 Logger.log(e);
@@ -95,8 +99,8 @@ public class DVMSProcess extends Process {
         // WARNING this is just a simple string
         // pattern: Host.currentHost().getName()+"-dvms"
         // ex: node1-dvms
-        this.dvms.send(dvms.self(), new DvmsProtocol.ThisIsYourNeighbor(next));
 
+        this.dvms.send(dvms.self(), new DvmsProtocol.ThisIsYourNeighbor(next));
     }
 }
 

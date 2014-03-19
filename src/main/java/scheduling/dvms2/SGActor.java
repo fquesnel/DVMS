@@ -8,9 +8,7 @@ import org.simgrid.msg.TransferFailureException;
 
 import org.simgrid.msg.Process;
 
-import scheduling.dvms2.MsgForSG;
-
-public class SGActor extends Process {
+public class SGActor {
 
 
     public SGNodeRef ref = null;
@@ -23,24 +21,24 @@ public class SGActor extends Process {
         return ref;
     }
 
-    public void main(String[] args) {
-
-        try {
-
-            while(true) {
-
-                waitFor(0.01);
-            }
-
-        } catch(Exception e) {
-
-            e.printStackTrace();
-        }
-    }
+//    public void main(String[] args) {
+//
+//        try {
+//
+//            while(true) {
+//
+//                waitFor(0.01);
+//            }
+//
+//        } catch(Exception e) {
+//
+//            e.printStackTrace();
+//        }
+//    }
 
     public void send(SGNodeRef node, Object message){
         MsgForSG msg = new MsgForSG(message,
-                node+"", name ,null);
+                node+"", ref.getName() ,null);
         msg.send();
     }
     public void forward(SGNodeRef dest, SGNodeRef origin, Object message){

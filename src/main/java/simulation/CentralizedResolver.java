@@ -32,6 +32,7 @@ public class CentralizedResolver extends Process {
     public void main(String[] args) throws MsgException{
        main2(args);
     }
+
     public void main2(String[] args) throws MsgException{
         double period = EntropyProperties.getEntropyPeriodicity();
 		int numberOfCrash = 0;
@@ -98,7 +99,7 @@ public class CentralizedResolver extends Process {
 
 				Msg.info("Number of nodes used: " + SimulatorManager.getNbOfActiveHosts()) ;
 
-			} else { 
+			} else {
 				System.err.println("The resolver does not find any solutions - EXIT");
 				numberOfCrash++;
 				Msg.info("Entropy has encountered an error (nb: " + numberOfCrash +")");

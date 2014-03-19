@@ -20,11 +20,18 @@ package org.discovery.dvms.entropy
  * ============================================================ */
 
 // TODO à fusionner avec dvms_scala/EntropyActor de SimgridInjector
+
 import scheduling.dvms2.{SGNodeRef, SGActor}
 import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
 import org.discovery.dvms.entropy.EntropyProtocol.MigrateVirtualMachine
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationlNoSolution, ReconfigurationResult}
+import entropy.configuration.{SimpleVirtualMachine, SimpleNode, SimpleConfiguration, Configuration}
+import org.discovery.dvms.dvms.DvmsModel.{ComputerSpecification, VirtualMachine, PhysicalNode}
+import simulation.{SimulatorManager, Main}
+import configuration._
+import org.discovery.EntropyService
+import scala.collection.JavaConversions._
 
 class EntropyActor(applicationRef: SGNodeRef) extends AbstractEntropyActor(applicationRef) {
 
@@ -35,47 +42,58 @@ class EntropyActor(applicationRef: SGNodeRef) extends AbstractEntropyActor(appli
 
   def computeReconfigurationPlan(nodes: List[SGNodeRef]): ReconfigurationResult = {
 
-//    val initialConfiguration: Configuration = new SimpleConfiguration();
-//
-//    // building the entropy configuration
-//    var entropyResult: ReconfigurationResult = ReconfigurationlNoSolution()
-//
-//    try {
-//
-//      val physicalNodesWithVmsConsumption = Await.result(Future.sequence(nodes.map({
-//        n =>
-//          n.ref ? GetVmsWithConsumption()
-//      })).mapTo[List[PhysicalNode]], 1 second)
-//
-//      physicalNodesWithVmsConsumption.foreach(physicalNodeWithVmsConsumption => {
-//
-//        val entropyNode = new SimpleNode(s"${physicalNodeWithVmsConsumption.ref.location.getId}",
-//          physicalNodeWithVmsConsumption.specs.numberOfCPU,
-//          physicalNodeWithVmsConsumption.specs.coreCapacity,
-//          physicalNodeWithVmsConsumption.specs.ramCapacity);
-//        initialConfiguration.addOnline(entropyNode);
-//
-//        physicalNodeWithVmsConsumption.machines.foreach(vm => {
-//          val entropyVm = new SimpleVirtualMachine(vm.name,
-//            vm.specs.numberOfCPU,
-//            0,
-//            vm.specs.ramCapacity,
-//            vm.cpuConsumption.toInt,
-//            vm.specs.ramCapacity);
-//          initialConfiguration.setRunOn(entropyVm, entropyNode);
-//        })
-//      })
-//
-//      entropyResult = EntropyService.computeReconfigurationPlan(initialConfiguration, physicalNodesWithVmsConsumption)
-//
-//    } catch {
-//      case e: Throwable =>
-//        log.info("at least one virtual machines failed to answer in times")
-//        entropyResult = ReconfigurationlNoSolution()
-//    }
-//    entropyResult
-    println("""/!\ UNIMPLEMENTED /!\: EntropyActor.computeReconfigurationPlan()""");
-    ReconfigurationlNoSolution()
+    val initialConfiguration: Configuration = new SimpleConfiguration();
+
+    val physicalNodesWithVmsConsumption: List[PhysicalNode] = nodes.map(n => {
+      val host = SimulatorManager.getXHostByName(n.getName)
+      val vms = host.getRunnings
+
+      var vmsAsScalaArray: List[entropy.configuration.VirtualMachine] = List()
+      try {
+        vmsAsScalaArray
+        = vms.map(vm =>
+          new SimpleVirtualMachine(vm.getName, vm.getCoreNumber.toInt, 100, vm.getMemSize, vm.getCPUDemand.toInt, 0)
+        ).toList
+      } catch {
+        case e: Exception =>
+          e.printStackTrace()
+          vmsAsScalaArray = List()
+      }
+      PhysicalNode(
+        new SGNodeRef(n.getName, n.getId),
+        vmsAsScalaArray.map(vm =>
+          VirtualMachine(
+            vm.getName,
+            vm.getCPUDemand,
+            ComputerSpecification(vm.getNbOfCPUs, vm.getMemoryDemand, vm.getCPUDemand))),
+        "",
+        ComputerSpecification(host.getNbCores, host.getMemSize, host.getCPUCapacity)
+      )
+    })
+
+
+    physicalNodesWithVmsConsumption.foreach(physicalNodeWithVmsConsumption => {
+
+      val entropyNode = new SimpleNode(physicalNodeWithVmsConsumption.ref.toString,
+        physicalNodeWithVmsConsumption.specs.numberOfCPU,
+        physicalNodeWithVmsConsumption.specs.coreCapacity,
+        physicalNodeWithVmsConsumption.specs.ramCapacity);
+      initialConfiguration.addOnline(entropyNode);
+
+      physicalNodeWithVmsConsumption.machines.foreach(vm => {
+        val entropyVm = new SimpleVirtualMachine(vm.name,
+          vm.specs.numberOfCPU,
+          0,
+          vm.specs.ramCapacity,
+          vm.specs.coreCapacity,
+          vm.specs.ramCapacity);
+        initialConfiguration.setRunOn(entropyVm, entropyNode);
+      })
+    })
+
+    EntropyService.computeReconfigurationPlan(initialConfiguration, physicalNodesWithVmsConsumption)
+    //    println("""/!\ UNIMPLEMENTED /!\: EntropyActor.computeReconfigurationPlan()""");
+    //    ReconfigurationlNoSolution()
   }
 
 
@@ -83,7 +101,7 @@ class EntropyActor(applicationRef: SGNodeRef) extends AbstractEntropyActor(appli
 
     case MigrateVirtualMachine(vmName, destination) => {
       // Todo: reimplement this
-      println("""/!\ UNIMPLEMENTED /!\: EntropyActor.receive: MigrateVirtualMachine(vmName, destination)""");
+      println( """/!\ UNIMPLEMENTED /!\: EntropyActor.receive: MigrateVirtualMachine(vmName, destination)""");
 
     }
 

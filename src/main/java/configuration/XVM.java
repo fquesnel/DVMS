@@ -9,7 +9,7 @@ import simulation.Main;
 /**
  * A stupid VM extension to associate a daemon to the VM
  */
-public class XVM extends VM{
+public class XVM extends VM {
 
     private int dpIntensity;
     private int netBW;

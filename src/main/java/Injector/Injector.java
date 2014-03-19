@@ -72,6 +72,7 @@ public class Injector extends Process {
         int nbOfVMs = vms.length;
 
         while(currentTime < duration){
+
             //   if( !skipOverlappingEvent || ((int)currentTime) % EntropyProperties.getEntropyPeriodicity() != 0){
             // select a VM
             tempVM = vms[randVMPicker.nextInt(nbOfVMs)];
@@ -83,6 +84,7 @@ public class Injector extends Process {
                 /* Gaussian law for the getCPUDemand assignment */
             gLoad = Math.max((randExpDis2.nextGaussian()*sigma)+mean, 0);
             int slot= (int) Math.round(Math.min(100,gLoad)*nbOfCPUDemandSlots/100);
+
 
             vmCPUDemand = slot*cpuConsumptionSlot*(int)tempVM.getCoreNumber();
 
