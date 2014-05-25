@@ -14,6 +14,7 @@ public class LocalController extends Process {
 
     String name;
     GroupManager gm;
+    int procCharge = 0;
 
     LocalController(Host host, String name, String hostname, int port, GroupManager gm) throws UnknownHostException {
         super(host, String.format("%s", hostname, port));
