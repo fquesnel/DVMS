@@ -25,6 +25,33 @@ public class LocalController extends Process {
         // this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id));
     }
 
+    abstract void join() {
+
+    }
+
+    abstract void rejoin() {
+
+    }
+
+    abstract void totalHostCapacity() {
+
+    }
+
+    abstract void vmMonitoring() {
+
+    }
+
+    abstract void startVM() {
+
+    }
+
+    abstract void shutdownVM() {
+
+    }
+
+    abstract void migrateVM() {
+
+    }
 
     @Override
     public void main(String[] args) throws MsgException {}
