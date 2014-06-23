@@ -5,27 +5,26 @@ import java.util.ArrayList;
 /**
  * Created by sudholt on 25/05/2014.
  */
-public static class GroupLeader {
+public class GroupLeader {
     ArrayList<GroupManagerCharge> gMCs = null;
 
     GroupLeader() {
-        GLHeartbeat.add(this);
     }
 
-    abstract void storeSummaryInfo() {
-
-    }
-
-    abstract void dispatchVMRequest() {
+    void storeSummaryInfo() {
 
     }
 
-    abstract void assignLCToGM() {
+    void dispatchVMRequest() {
 
     }
 
-    abstract void anouncePresence() {
+    void assignLCToGM() {
 
+    }
+
+    void announcePresence() {
+        GLHeartbeatGroup.setGl(this);
     }
 
 }

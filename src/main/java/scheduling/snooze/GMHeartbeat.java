@@ -1,14 +1,29 @@
 package scheduling.snooze;
 
-import java.util.ArrayList;
-
 /**
- * Created by sudholt on 22/06/2014.
+ * Created by sudholt on 23/06/2014.
  */
 public class GMHeartbeat {
-    static ArrayList<GroupManager> gms = null;
+    private GroupManager gm = null;
+    private long ts = 0;
 
-    static void add(GroupManager gm) {
-        gms.add(gm);
+    GMHeartbeat(GroupManager gm, long ts) {
+        this.gm = gm; this.ts = ts;
+    }
+
+    public GroupManager getGm() {
+        return gm;
+    }
+
+    public void setGm(GroupManager gm) {
+        this.gm = gm;
+    }
+
+    public long getTs() {
+        return ts;
+    }
+
+    public void setTs(long ts) {
+        this.ts = ts;
     }
 }

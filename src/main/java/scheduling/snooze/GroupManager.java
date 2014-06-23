@@ -10,38 +10,38 @@ public class GroupManager {
     ArrayList<LocalControllerCharge> lCCs = null;
 
     GroupManager() {
-        GMHeartbeat.add(this);
-    }
-
-    abstract void receiveHostQuery() {
 
     }
 
-    abstract void answerHostQuery() {
+    void receiveHostQuery() {
 
     }
 
-    abstract void receiveVMQuery() {
+    void answerHostQuery() {
 
     }
 
-    abstract void answerVMQuery() {
+    void receiveVMQuery() {
 
     }
 
-    abstract void scheduleVMs() {
+    void answerVMQuery() {
 
     }
 
-    abstract void sendVMCommandsLC() {
+    void scheduleVMs() {
 
     }
 
-    abstract void summaryInfoToGL() {
+    void sendVMCommandsLC() {
 
     }
 
-    abstract void announcePresence() {
+    void summaryInfoToGL() {
 
+    }
+
+    void announcePresence() {
+        GMHeartbeatGroup.getGmhg().add(this);
     }
 }
