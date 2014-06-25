@@ -16,6 +16,8 @@ public class LocalController extends Process {
     private XHost host = null;
     private GroupManager gm = null;
     private int procCharge = 0;
+    private String entryPointInbox = "entryPointInbox";
+    private String replyBox = "replyBox";
 
     LocalController(String name, XHost host, GroupManager gm) throws UnknownHostException {
         this.name = name;
@@ -24,7 +26,8 @@ public class LocalController extends Process {
     }
 
     void join() {
-
+        SnoozeMsg joinCLMsg = new JoinLCMsg(this, entryPointInbox, name, replyBox);
+        joinCLMsg.send();
     }
 
     void rejoin() {

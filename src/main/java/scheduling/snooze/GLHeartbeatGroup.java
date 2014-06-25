@@ -1,12 +1,11 @@
 package scheduling.snooze;
 
 import java.util.Date;
-import java.util.Observable;
 
 /**
  * Created by sudholt on 22/06/2014.
  */
-public class GLHeartbeatGroup extends Observable {
+public class GLHeartbeatGroup {
     private static GroupLeader gl = null;
     private static long ts = 0;
 

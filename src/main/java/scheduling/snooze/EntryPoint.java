@@ -5,7 +5,7 @@ package scheduling.snooze;
  */
 public class EntryPoint extends org.simgrid.msg.Process {
     private GroupLeader GL = null;
-
+    private String inBox = "entryPointInbox";
 
     public GroupLeader getGL() {
         return GL;
@@ -15,6 +15,15 @@ public class EntryPoint extends org.simgrid.msg.Process {
         this.GL = GL;
     }
 
+    public String getInBox() {
+        return inBox;
+    }
+
+    public void setInBox(String inBox) {
+        this.inBox = inBox;
+    }
+
     public void main(String args[]) {
+
     }
 }
