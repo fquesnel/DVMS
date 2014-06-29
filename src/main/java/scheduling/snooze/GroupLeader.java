@@ -7,6 +7,7 @@ import java.util.ArrayList;
  */
 public class GroupLeader {
     ArrayList<GroupManagerCharge> gMCs = null;
+    private String glHeartbeatInbox = "glHeartbeatInbox";
 
     GroupLeader() {
     }
@@ -24,7 +25,6 @@ public class GroupLeader {
     }
 
     void announcePresence() {
-        GLHeartbeatGroup.setGl(this);
+        AnnounceGLMsg m = new AnnounceGLMsg(this, glHeartbeatInbox, null, null);
     }
-
 }

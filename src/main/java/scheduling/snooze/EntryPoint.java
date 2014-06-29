@@ -1,9 +1,11 @@
 package scheduling.snooze;
 
+import org.simgrid.msg.Process;
+
 /**
  * Created by sudholt on 22/06/2014.
  */
-public class EntryPoint extends org.simgrid.msg.Process {
+public class EntryPoint extends Process {
     private GroupLeader GL = null;
     private String inBox = "entryPointInbox";
 

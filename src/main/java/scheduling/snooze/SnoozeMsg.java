@@ -30,11 +30,9 @@ public class SnoozeMsg extends Task {
     public String getReplyBox(){
         return replyBox;
     }
-
     public String getSendBox() {
         return this.sendBox;
     }
-
     public String getOrigin() {
         return this.origin;
     }
