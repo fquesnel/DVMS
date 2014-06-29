@@ -26,5 +26,6 @@ public class GroupLeader {
 
     void announcePresence() {
         AnnounceGLMsg m = new AnnounceGLMsg(this, glHeartbeatInbox, null, null);
+        m.send();
     }
 }

@@ -26,16 +26,27 @@ public class GLHeartbeatGroup extends Process {
 
     public void main(String[] args) throws MsgException {
         while (true) {
-            try{
-                SnoozeMsg req=(SnoozeMsg) Task.receive(glHeartbeatInbox);
-                Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
-            } catch (Exception e) {
-                Logger.log(e);
-            }
+            // get GL heartbeat message
+            setGl(receiveAnnounceGLMsg());
         }
     }
 
     protected GLHeartbeatGroup() {}
+
+    GroupLeader receiveAnnounceGLMsg() {
+        GroupLeader gl = null;
+        try{
+            AnnounceGLMsg req = (AnnounceGLMsg) Task.receive(glHeartbeatInbox, 2);
+            Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
+            gl = (GroupLeader) req.getMessage();
+        } catch (org.simgrid.msg.TimeoutException te) {
+            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GL dead");
+            te.printStackTrace();
+        } catch (Exception e) {
+            Logger.log(e);
+        }
+        return gl;
+    }
 
     @Override
     public void destroy() {}
