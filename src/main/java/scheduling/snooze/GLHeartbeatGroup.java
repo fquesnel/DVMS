@@ -1,78 +1,63 @@
 package scheduling.snooze;
 
-import org.simgrid.msg.Host;
-import org.simgrid.msg.MsgException;
-import org.simgrid.msg.Task;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
+import org.simgrid.msg.*;
+import org.simgrid.msg.Process;
 
 /**
  * Created by sudholt on 22/06/2014.
  */
 public class GLHeartbeatGroup extends Process {
+    private static GLHeartbeatGroup glhg = null;
     private static GroupLeader gl = null;
-    private static long ts = 0;
-    private String glHeartbeatInbox = "glHeartbeatInbox";
+    private String glHeartbeatNew = "glHeartbeatNew";
+    private String glHeartbeatBeat = "glHeartbeatBeat";
 
     public static void setGl(GroupLeader gl) {
-        if (GLHeartbeatGroup.gl != null && GLHeartbeatGroup.gl != gl) System.out.println("[GLHeartbeatGroup] Err: multiple GLs");
-        else {
-            GLHeartbeatGroup.gl = gl;
-            ts = new Date().getTime();
-        }
+        GLHeartbeatGroup.gl = gl;
     }
 
     public void main(String[] args) throws MsgException {
         while (true) {
-            // get GL heartbeat message
-            setGl(receiveAnnounceGLMsg());
+            newGL();
+            beatGLs();
         }
     }
 
     protected GLHeartbeatGroup() {}
 
-    GroupLeader receiveAnnounceGLMsg() {
-        GroupLeader gl = null;
+    public static GLHeartbeatGroup getGlhg() {
+        if (glhg == null) new GLHeartbeatGroup();
+        return glhg;
+    }
+
+    void newGL() {
+        try {
+            if (gl == null) {
+                NewGLMsg req = (NewGLMsg) Task.receive(glHeartbeatNew);
+                GLHeartbeatGroup.setGl((GroupLeader) req.getMessage());
+            } else {
+                Comm c = Task.irecv(glHeartbeatNew);
+                Logger.log("GLHeartbeatGroup:newGL, ERROR: 2nd GroupLeader" + c.getTask());
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void beatGLs() {
         try{
-            AnnounceGLMsg req = (AnnounceGLMsg) Task.receive(glHeartbeatInbox, 2);
+            BeatGLMsg req = (BeatGLMsg) Task.receive(glHeartbeatBeat, 2);
             Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
-            gl = (GroupLeader) req.getMessage();
+            GroupLeader gl = (GroupLeader) req.getMessage();
+
+            if (GLHeartbeatGroup.gl != null && GLHeartbeatGroup.gl != gl)
+                Logger.log("[GLHeartbeatGroup] Err: multiple GLs");
         } catch (org.simgrid.msg.TimeoutException te) {
             Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GL dead");
             te.printStackTrace();
         } catch (Exception e) {
             Logger.log(e);
         }
-        return gl;
-    }
-
-    @Override
-    public void destroy() {}
-
-    @Override
-    public int waitFor() throws InterruptedException {
-        return 0;
-    }
-
-    @Override
-    public InputStream getErrorStream() {
-        return null;
-    }
-
-    @Override
-    public OutputStream getOutputStream() {
-        return null;
-    }
-
-    @Override
-    public InputStream getInputStream() {
-        return null;
-    }
-
-    @Override
-    public int exitValue() {
-        return 0;
     }
 }

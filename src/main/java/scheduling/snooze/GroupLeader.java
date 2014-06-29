@@ -1,15 +1,29 @@
 package scheduling.snooze;
 
+import org.simgrid.msg.MsgException;
+import org.simgrid.msg.Process;
+
 import java.util.ArrayList;
 
 /**
  * Created by sudholt on 25/05/2014.
  */
-public class GroupLeader {
+public class GroupLeader extends Process {
     ArrayList<GroupManagerCharge> gMCs = null;
-    private String glHeartbeatInbox = "glHeartbeatInbox";
+    private String glHeartbeatNew = "glHeartbeatNew";
+    private String glHeartbeatBeat = "glHeartbeatBeat";
 
     GroupLeader() {
+    }
+
+    @Override
+    public void main(String[] strings) throws MsgException {
+        NewGLMsg m = new NewGLMsg(this, glHeartbeatNew, null, null);
+        m.send();
+
+        while (true) {
+            beat(); sleep(1000);
+        }
     }
 
     void storeSummaryInfo() {
@@ -24,8 +38,8 @@ public class GroupLeader {
 
     }
 
-    void announcePresence() {
-        AnnounceGLMsg m = new AnnounceGLMsg(this, glHeartbeatInbox, null, null);
+    void beat() {
+        BeatGLMsg m = new BeatGLMsg(this, glHeartbeatBeat, null, null);
         m.send();
     }
 }
