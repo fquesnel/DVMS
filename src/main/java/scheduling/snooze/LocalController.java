@@ -17,12 +17,13 @@ public class LocalController extends Process {
     private GroupManager gm = null;
     private int procCharge = 0;
     private String entryPointInbox = "entryPointInbox";
-    private String replyBox = "replyBox";
+    private String replyBox;
 
     LocalController(String name, XHost host, GroupManager gm) throws UnknownHostException {
         this.name = name;
         this.host = host;
         this.gm = gm;
+        this.replyBox = name + "ReplyBox";
     }
 
     void join() {
@@ -35,11 +36,11 @@ public class LocalController extends Process {
     }
 
     void totalHostCapacity() {
-
+        HostCapacity hc = new HostCapacity(host.getCPUCapacity(), host.getMemSize());
     }
 
     void vmMonitoring() {
-
+        HostCapacity hc = new HostCapacity(host.getCPUDemand(), host.getMemDemand());
     }
 
     void startVM() {

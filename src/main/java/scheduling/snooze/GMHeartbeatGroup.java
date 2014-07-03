@@ -14,9 +14,19 @@ public class GMHeartbeatGroup extends Process {
     private static GMHeartbeatGroup gmhg = null;
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
-    private HashSet<GroupManager> gms = new HashSet<GroupManager>();
+    private HashSet<GroupManagerHeartbeat> gms = new HashSet<GroupManagerHeartbeat>();
 
-    protected GMHeartbeatGroup() {}
+    protected GMHeartbeatGroup() {};
+
+    class GroupManagerHeartbeat {
+        private GroupManager gm;
+        private String mb;
+
+        GroupManagerHeartbeat(GroupManager gm, String mb) {
+            this.gm = gm;
+            this.mb = mb;
+        }
+    }
 
     @Override
     public void main(String[] strings) throws MsgException {
@@ -36,7 +46,7 @@ public class GMHeartbeatGroup extends Process {
         if (Task.listen(gmHeartbeatNew)) {
             try {
                 NewGMMsg req = (NewGMMsg) Task.receive(gmHeartbeatNew);
-                gms.add((GroupManager) req.getMessage());
+                gms.add(new GroupManagerHeartbeat((GroupManager) req.getMessage(), req.getReplyBox()));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -45,12 +55,10 @@ public class GMHeartbeatGroup extends Process {
 
     void beatGMs() {
         try{
-            for (GroupManager gm : gms) {
-                BeatGMMsg req = (BeatGMMsg) Task.receive(gmHeartbeatBeat, 2);
+            for (GroupManagerHeartbeat gm : gms) {
+                BeatGMMsg req = (BeatGMMsg) Task.receive(gm.mb, 2);
                 Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
-                gm = (GroupManager) req.getMessage();
             }
-
         } catch (org.simgrid.msg.TimeoutException te) {
             Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GL dead");
             te.printStackTrace();

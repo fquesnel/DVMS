@@ -12,6 +12,8 @@ public class GLHeartbeatGroup extends Process {
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";
 
+
+
     public static void setGl(GroupLeader gl) {
         GLHeartbeatGroup.gl = gl;
     }

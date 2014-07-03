@@ -1,23 +1,23 @@
 package scheduling.snooze;
 
 /**
- * Created by sudholt on 25/05/2014.
+ * Created by sudholt on 03/07/2014.
  */
-public class LocalControllerCharge {
-    private LocalController lc = null;
+public class GMCharge {
+    private GroupManager gm;
     private int procCharge;
     private int memUsed;
 
-    LocalControllerCharge(LocalController lc, int proc, int mem) {
-        this.lc = lc; this.procCharge = proc; this.memUsed = mem;
+    GMCharge(GroupManager gm, int proc, int mem) {
+        this.gm = gm; this.procCharge = proc; this.memUsed = mem;
     }
 
-    public LocalController getLc() {
-        return lc;
+    public GroupManager getGm() {
+        return gm;
     }
 
-    public void setLc(LocalController lc) {
-        this.lc = lc;
+    public void setGm(GroupManager lc) {
+        this.gm = gm;
     }
 
     public int getProcCharge() {

@@ -1,5 +1,6 @@
 package scheduling.snooze;
 
+import org.simgrid.msg.Host;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 
@@ -9,7 +10,8 @@ import java.util.ArrayList;
  * Created by sudholt on 25/05/2014.
  */
 public class GroupLeader extends Process {
-    ArrayList<GroupManagerCharge> gMCs = null;
+    private Host host = null;
+    private ArrayList<GMCharge> gMCs = null;
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";
 
