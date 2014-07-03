@@ -19,12 +19,13 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
-import scheduling.dvms2.{SGNodeRef, SGActor}
+import scheduling.dvms2.SGActor
 import concurrent.ExecutionContext
 import java.util.concurrent.Executors
 import scala.concurrent.duration._
 import org.discovery.dvms.entropy.EntropyProtocol._
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.ReconfigurationResult
+import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
 
 abstract class AbstractEntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 

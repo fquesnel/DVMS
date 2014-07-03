@@ -1,4 +1,4 @@
-package scheduling.entropy;
+package scheduling.entropyBased.entropy;
 
 import entropy.configuration.Configuration;
 import entropy.plan.TimedReconfigurationPlan;

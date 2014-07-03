@@ -1,12 +1,10 @@
-package scheduling.dvms2;
+package scheduling.entropyBased.dvms2;
 
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Task;
 import org.simgrid.msg.TimeoutException;
 import org.simgrid.msg.TransferFailureException;
-
-import org.simgrid.msg.Process;
 
 public class SGActor {
 

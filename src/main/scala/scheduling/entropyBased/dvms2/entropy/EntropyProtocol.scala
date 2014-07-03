@@ -19,7 +19,8 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
-import scheduling.dvms2.{SGNodeRef, SGActor}
+import scheduling.dvms2.SGActor
+import scheduling.entropyBased.dvms2.SGNodeRef
 
 trait EntropyMessage
 

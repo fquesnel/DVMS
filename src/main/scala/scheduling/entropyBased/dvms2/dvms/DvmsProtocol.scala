@@ -22,7 +22,7 @@ package org.discovery.dvms.dvms
  * ============================================================ */
 
 import org.discovery.dvms.dvms.DvmsModel._
-import scheduling.dvms2.SGNodeRef
+import scheduling.entropyBased.dvms2.SGNodeRef
 
 trait DvmsMessage
 

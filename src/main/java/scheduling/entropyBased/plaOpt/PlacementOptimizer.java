@@ -1,4 +1,4 @@
-package scheduling.plaOpt;
+package scheduling.entropyBased.plaOpt;
 
 import configuration.XHost;
 import configuration.XVM;

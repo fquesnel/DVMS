@@ -1,4 +1,4 @@
-package org.discovery.dvms.entropy;
+package scheduling.entropyBased.dvms2;
 
 /* ============================================================
  * Discovery Project - DVMS

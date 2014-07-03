@@ -4,10 +4,10 @@ package simulation;
 import dvms.log.Logger;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.dvms2.DVMSProcess;
-import scheduling.dvms2.MonitorProcess;
-//import scheduling.dvms2.DVMSProcess;
-//import scheduling.dvms2.MonitorProcess;
+import scheduling.entropyBased.dvms2.DVMSProcess;
+import scheduling.entropyBased.dvms2.MonitorProcess;
+//import DVMSProcess;
+//import MonitorProcess;
 
 
 /** This class is in charge of launching the latest version of DVMs (currently DVMS V2 implemented in SCALA)

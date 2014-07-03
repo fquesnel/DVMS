@@ -1,6 +1,4 @@
-package scheduling.dvms2;
-
-import org.simgrid.msg.*;
+package scheduling.entropyBased.dvms2;
 
 public class SGNodeRef {
 
