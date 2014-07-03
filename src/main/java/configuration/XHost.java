@@ -1,14 +1,10 @@
 package configuration;
 
-import entropy.configuration.Node;
-import entropy.configuration.VirtualMachine;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
-import simulation.Main;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 
 /**
  * Created with IntelliJ IDEA.
@@ -85,6 +81,13 @@ public class XHost{
         double cons=0;
         for (XVM vm: this.getRunnings())
             cons+=vm.getCPUDemand();
+        return cons;
+    }
+
+    public int getMemDemand(){
+        int cons=0;
+        for (XVM vm: this.getRunnings())
+            cons+=vm.getMemSize();
         return cons;
     }
 
