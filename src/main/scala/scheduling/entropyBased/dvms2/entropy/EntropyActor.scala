@@ -21,7 +21,7 @@ package org.discovery.dvms.entropy
 
 // TODO à fusionner avec dvms_scala/EntropyActor de SimgridInjector
 
-import scheduling.dvms2.{SGNodeRef, SGActor}
+import scheduling.dvms2.SGActor
 import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
 import org.discovery.dvms.entropy.EntropyProtocol.MigrateVirtualMachine
@@ -30,7 +30,9 @@ import entropy.configuration.{SimpleVirtualMachine, SimpleNode, SimpleConfigurat
 import org.discovery.dvms.dvms.DvmsModel.{ComputerSpecification, VirtualMachine, PhysicalNode}
 import simulation.{SimulatorManager, Main}
 import configuration._
-import org.discovery.EntropyService
+import scheduling.entropyBased.dvms2.{EntropyService, SGNodeRef}
+
+//import org.discovery.EntropyService
 import scala.collection.JavaConversions._
 
 class EntropyActor(applicationRef: SGNodeRef) extends AbstractEntropyActor(applicationRef) {

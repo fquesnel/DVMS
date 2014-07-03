@@ -1,8 +1,7 @@
-package scheduling.dvms2;
+package scheduling.entropyBased.dvms2;
 
 import java.net.UnknownHostException;
 
-import configuration.XHost;
 import org.discovery.dvms.dvms.DvmsActor;
 import org.discovery.dvms.dvms.DvmsProtocol;
 import org.simgrid.msg.Host;
@@ -33,7 +32,7 @@ public class DVMSProcess extends Process {
         super(host, String.format("%s", hostname, port));
 
         this.name = String.format("%s", hostname, port);
-        this.neighborName = String.format("%s", neighborHostname, port);
+        this.neighborName = String.format("%s", neighborHostname, port);//XXX Replace port with neighborPort
 
         this.id = nameToId(hostname);
         this.neighborId = nameToId(neighborHostname);

@@ -1,4 +1,4 @@
-package scheduling.entropy;
+package scheduling.entropyBased.entropy;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -13,7 +13,7 @@ import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
-import scheduling.EntropyProperties;
+import scheduling.entropyBased.EntropyProperties;
 import scheduling.Scheduler;
 import simulation.CentralizedResolver;
 

@@ -1,4 +1,4 @@
-package scheduling.dvms2;
+package scheduling.entropyBased.dvms2;
 
 import configuration.XHost;
 import configuration.XVM;
@@ -6,7 +6,6 @@ import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import org.simgrid.trace.Trace;
 import simulation.SimulatorManager;
-import org.discovery.dvms.entropy.*;
 
 public class MonitorProcess extends Process {
 

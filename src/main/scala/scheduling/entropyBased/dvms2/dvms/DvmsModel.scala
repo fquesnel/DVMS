@@ -20,7 +20,7 @@ package org.discovery.dvms.dvms
  * ============================================================ */
 
 import java.util.UUID
-import scheduling.dvms2.SGNodeRef
+import scheduling.entropyBased.dvms2.SGNodeRef
 
 object DvmsModel {
 

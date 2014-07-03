@@ -28,10 +28,11 @@ import org.discovery.dvms.dvms.DvmsModel._
 import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
 import org.simgrid.msg.{Msg, Host}
 import org.discovery.dvms.entropy.EntropyActor
+import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
 
 //import org.discovery.dvms.entropy.EntropyProtocol.{EntropyComputeReconfigurePlan}
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
-import scheduling.dvms2.{SGNodeRef, SGActor}
+import scheduling.dvms2.SGActor
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object DvmsActor {
