@@ -11,7 +11,7 @@ import java.util.ArrayList;
  */
 public class GroupLeader extends Process {
     private Host host = null;
-    private ArrayList<GMCharge> gMCs = null;
+    private ArrayList<GMChargeSummary> gMCs = null;
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";
 
@@ -29,7 +29,9 @@ public class GroupLeader extends Process {
     }
 
     void storeSummaryInfo() {
+        for (GMChargeSummary s: gMCs) {
 
+        }
     }
 
     void dispatchVMRequest() {

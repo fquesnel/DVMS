@@ -11,6 +11,7 @@ import java.util.ArrayList;
 public class GroupManager extends Process {
     private GroupLeader gl;
     private ArrayList<LocalControllerCharge> lCCs;
+    private GMChargeSummary gmcs = new GMChargeSummary(this, 0, 0);
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
     private String myHeartbeat;
@@ -54,7 +55,7 @@ public class GroupManager extends Process {
     }
 
     void summaryInfoToGL() {
-
+        updateSummary();
     }
 
     void beat() {
@@ -62,7 +63,7 @@ public class GroupManager extends Process {
         m.send();
     }
 
-    GMCharge calcGMCharge() {
+    void updateSummary() {
         int proc = 0;
         int mem = 0;
         int s = getlCCs().size();
@@ -71,7 +72,7 @@ public class GroupManager extends Process {
             mem += lc.getMemUsed();
         }
         proc /= s; mem /= s;
-        return new GMCharge(this, proc, mem);
+        gmcs.setProcCharge(proc); gmcs.setMemUsed(mem);
     }
 
     public ArrayList<LocalControllerCharge> getlCCs() {

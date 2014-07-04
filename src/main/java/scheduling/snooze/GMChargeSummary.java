@@ -3,12 +3,12 @@ package scheduling.snooze;
 /**
  * Created by sudholt on 03/07/2014.
  */
-public class GMCharge {
+public class GMChargeSummary {
     private GroupManager gm;
-    private int procCharge;
+    private double procCharge;
     private int memUsed;
 
-    GMCharge(GroupManager gm, int proc, int mem) {
+    GMChargeSummary(GroupManager gm, double proc, int mem) {
         this.gm = gm; this.procCharge = proc; this.memUsed = mem;
     }
 
@@ -20,11 +20,11 @@ public class GMCharge {
         this.gm = gm;
     }
 
-    public int getProcCharge() {
+    public double getProcCharge() {
         return procCharge;
     }
 
-    public void setProcCharge(int procCharge) {
+    public void setProcCharge(double procCharge) {
         this.procCharge = procCharge;
     }
 
