@@ -7,7 +7,7 @@ package scheduling.snooze;
 public class JoinLCMsg extends SnoozeMsg {
     private LocalController lc = null;
 
-    JoinLCMsg(LocalController lc, String sendBox , String origin, String replyBox) {
-        super(lc, sendBox, origin, replyBox);
+    JoinLCMsg(String lcHostname, String sendBox , String origin, String replyBox) {
+        super(lcHostname, sendBox, origin, replyBox);
     }
 }
