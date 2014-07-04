@@ -12,22 +12,24 @@ import java.net.UnknownHostException;
 
 public class LocalController extends Process {
 
-    private String name = null;
-    private XHost host = null;
-    private GroupManager gm = null;
+    private String name;
+    private XHost host;
+    private String groupManagerHostName;
     private int procCharge = 0;
+    private String lcCharge;
     private String entryPointInbox = "entryPointInbox";
-    private String replyBox;
+    private String myBox;
 
-    LocalController(String name, XHost host, GroupManager gm) throws UnknownHostException {
+    LocalController(String name, XHost host, String n) throws UnknownHostException {
         this.name = name;
         this.host = host;
-        this.gm = gm;
-        this.replyBox = name + "ReplyBox";
+        this.groupManagerHostName = n;
+        this.myBox = host.getName() + "myBox";
+        this.lcCharge = n + "lcCharge";
     }
 
     void join() {
-        SnoozeMsg joinCLMsg = new JoinLCMsg(this, entryPointInbox, name, replyBox);
+        JoinLCMsg joinCLMsg = new JoinLCMsg(host.getName(), entryPointInbox, name, myBox);
         joinCLMsg.send();
     }
 
@@ -39,8 +41,11 @@ public class LocalController extends Process {
         HostCapacity hc = new HostCapacity(host.getCPUCapacity(), host.getMemSize());
     }
 
-    void vmMonitoring() {
-        HostCapacity hc = new HostCapacity(host.getCPUDemand(), host.getMemDemand());
+    void lcChargeToGM() {
+        LocalControllerCharge
+            lc = new LocalControllerCharge(host.getName(), host.getCPUDemand(), host.getMemDemand(), null);
+        LCChargeMsg m = new LCChargeMsg(lc, lcCharge, null, null);
+        m.send();
     }
 
     void startVM() {

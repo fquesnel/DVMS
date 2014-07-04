@@ -1,26 +1,25 @@
 package scheduling.snooze;
 
+import java.util.Date;
+
 /**
  * Created by sudholt on 25/05/2014.
  */
 public class LocalControllerCharge {
-    private LocalController lc = null;
-    private int procCharge;
+    private String hostName;
+    private double procCharge;
     private int memUsed;
+    private Date timeStamp;
 
-    LocalControllerCharge(LocalController lc, int proc, int mem) {
-        this.lc = lc; this.procCharge = proc; this.memUsed = mem;
+    LocalControllerCharge(String n, double proc, int mem, Date ts) {
+        this.setHostName(n); this.procCharge = proc; this.memUsed = mem; this.setTimeStamp(ts);
     }
 
-    public LocalController getLc() {
-        return lc;
-    }
+    public String getHostName() { return hostName; }
 
-    public void setLc(LocalController lc) {
-        this.lc = lc;
-    }
+    public void setHostName(String hostName) { this.hostName = hostName; }
 
-    public int getProcCharge() {
+    public double getProcCharge() {
         return procCharge;
     }
 
@@ -35,4 +34,8 @@ public class LocalControllerCharge {
     public void setMemUsed(int memUsed) {
         this.memUsed = memUsed;
     }
+
+    public Date getTimeStamp() { return timeStamp; }
+
+    public void setTimeStamp(Date timeStamp) { this.timeStamp = timeStamp; }
 }

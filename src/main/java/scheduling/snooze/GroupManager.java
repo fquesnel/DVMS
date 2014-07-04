@@ -1,32 +1,42 @@
 package scheduling.snooze;
 
+import org.simgrid.msg.Host;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
+import org.simgrid.msg.Task;
 
-import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
 
 /**
  * Created by sudholt on 25/05/2014.
  */
 public class GroupManager extends Process {
+    private Host host;
     private GroupLeader gl;
-    private ArrayList<LocalControllerCharge> lCCs;
-    private GMChargeSummary gmcs = new GMChargeSummary(this, 0, 0);
+    private Hashtable<String, LocalControllerCharge> lCCs;
+    private GMChargeSummary cs = new GMChargeSummary(host.getName(), 0, 0, null);
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
+    private String glSummary = "glSummary";
+    private String lcCharge;
     private String myHeartbeat;
 
     GroupManager() {
-        myHeartbeat = msgName() + "myHeartbeat";
+        this.host = Host.currentHost();
+        this.myHeartbeat = host.getName() + "myHeartbeat";
+        this.lcCharge = host.getName() + "lcCharge";
     }
 
     @Override
     public void main(String[] strings) throws MsgException {
-        NewGMMsg m = new NewGMMsg(this, gmHeartbeatNew, null, myHeartbeat);
+        NewGMMsg m = new NewGMMsg(host.getName(), gmHeartbeatNew, null, myHeartbeat);
         m.send();
 
         while (true) {
-            beat(); sleep(1000);
+            beat();
+            summaryInfoToGL();
+            sleep(1000);
         }
     }
 
@@ -55,31 +65,41 @@ public class GroupManager extends Process {
     }
 
     void summaryInfoToGL() {
-        updateSummary();
-    }
-
-    void beat() {
-        BeatGMMsg m = new BeatGMMsg(this, gmHeartbeatBeat, null, null);
+        calcSummary();
+        GMSumMsg m = new GMSumMsg(cs, glSummary, null, null);
         m.send();
     }
 
-    void updateSummary() {
+    void beat() {
+        BeatGMMsg m = new BeatGMMsg(host.getName(), gmHeartbeatBeat, null, null);
+        m.send();
+    }
+
+    void calcSummary() {
         int proc = 0;
         int mem = 0;
-        int s = getlCCs().size();
-        for(LocalControllerCharge lc: getlCCs()) {
+        int s = lCCs.size();
+        for(LocalControllerCharge lc: lCCs.values()) {
             proc += lc.getProcCharge();
             mem += lc.getMemUsed();
         }
         proc /= s; mem /= s;
-        gmcs.setProcCharge(proc); gmcs.setMemUsed(mem);
+        cs.setProcCharge(proc); cs.setMemUsed(mem);
     }
 
-    public ArrayList<LocalControllerCharge> getlCCs() {
-        return lCCs;
-    }
+    void updateLCCharge() {
+        // accepts all pending charge messages, adds time stamps and stores the entries in gMCs
+        while (Task.listen(glSummary)) {
+            try {
+                SnoozeMsg m = (SnoozeMsg) Task.receive(glSummary);
+                m = (GMSumMsg) m;
+                LocalControllerCharge cs = (LocalControllerCharge) m.getMessage();
+                cs.setTimeStamp(new Date());
+                lCCs.put(cs.getHostName(), cs);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
-    public void setlCCs(ArrayList<LocalControllerCharge> lCCs) {
-        this.lCCs = lCCs;
     }
 }
