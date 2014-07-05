@@ -10,6 +10,7 @@ public class GLHeartbeatGroup extends Process {
     private static GroupLeader gl = null;
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";
+    private String epInbox = "ipInbox";
 
 
 
@@ -26,15 +27,18 @@ public class GLHeartbeatGroup extends Process {
 
     protected GLHeartbeatGroup() {}
 
+    /**
+     * Register new GL and notify EP.
+     */
     void newGL() {
         try {
-            if (gl == null) {
-                NewGLMsg req = (NewGLMsg) Task.receive(glHeartbeatNew);
-                GLHeartbeatGroup.setGl((GroupLeader) req.getMessage());
-            } else {
-                Comm c = Task.irecv(glHeartbeatNew);
-                Logger.log("GLHeartbeatGroup:newGL, ERROR: 2nd GroupLeader" + c.getTask());
-            }
+            // Store GL
+            NewGLMsg m = (NewGLMsg) Task.receive(glHeartbeatNew);
+            if (gl == null) GLHeartbeatGroup.setGl((GroupLeader) m.getMessage());
+            else Logger.log("GLHeartbeatGroup:newGL, ERROR: 2nd GroupLeader" + m);
+            // Notify EP
+            m = new NewGLMsg((String) m.getMessage(), epInbox, null, null);
+            m.send();
         }
         catch (Exception e) {
             e.printStackTrace();

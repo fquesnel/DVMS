@@ -9,7 +9,7 @@ import org.simgrid.msg.Task;
  */
 public class EntryPoint extends Process {
     private Host host;
-    private GroupLeader gl;
+    private String glHostname = "";
     private String inbox = "epInbox";
     private String glInbox = "glInbox";
 
@@ -22,18 +22,24 @@ public class EntryPoint extends Process {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
                 handle(m);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    void handle(SnoozeMsg m) { Logger.log("[EP.handle] Unknown message" + m); }
+    void handle(SnoozeMsg m) {
+        Logger.log("[EP.handle] Unknown message" + m);
+    }
 
-    void handle(NewLCMsg m) { // join/rejoin LC
-        if (gl != null) {
+    void handle(NewLCMsg m) { // Join/rejoin LC
+        if (glHostname != "") {
             NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
         } else Logger.log("[EP.handle] New LC without GL");
+    }
+
+    void handle(NewGLMsg m) {
+        glHostname = (String) m.getMessage();
     }
 }
