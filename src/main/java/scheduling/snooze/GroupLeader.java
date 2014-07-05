@@ -14,6 +14,7 @@ import java.util.Hashtable;
 public class GroupLeader extends Process {
     private Host host;
     private Hashtable<String, GMChargeSummary> gMCs = new Hashtable<>();
+    private String inbox = "glInbox";
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";
     private String glSummary = "glSummary";
@@ -24,14 +25,40 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
-        NewGLMsg m = new NewGLMsg(host.getName(), glHeartbeatNew, null, null);
+        SnoozeMsg m;
+        m = new NewGLMsg(host.getName(), glHeartbeatNew, null, null);
         m.send();
 
         while (true) {
-            beat();
+            try {
+                m = (SnoozeMsg) Task.receive(inbox);
+                handle(m);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
             updateSummaryInfo();
+            beat();
             sleep(1000);
         }
+    }
+
+    void handle(SnoozeMsg m) { Logger.log("[GL.handle] Unknown message" + m); }
+
+    void handle(NewLCMsg m) {
+        // join/rejoin LC: assign LC to least charged GM
+
+        // identify least charge GM
+        String gmHost = "";
+        double minCharge = 2, curCharge;
+        GMChargeSummary cs;
+        for (String s: gMCs.keySet()) {
+            cs        = gMCs.get(s);
+            curCharge = cs.getProcCharge() + cs.getMemUsed();
+            if (minCharge > curCharge) { minCharge = curCharge; gmHost = s; }
+        };
+        // relay message
+        m = new NewLCMsg(gmHost, gmHost+"gmInbox", m.getOrigin(), m.getReplyBox());
+        m.send();
     }
 
     void updateSummaryInfo() {

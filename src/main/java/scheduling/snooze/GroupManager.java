@@ -16,6 +16,7 @@ public class GroupManager extends Process {
     private GroupLeader gl;
     private Hashtable<String, LocalControllerCharge> lCCs;
     private GMChargeSummary cs = new GMChargeSummary(host.getName(), 0, 0, null);
+    private String inbox;
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
     private String glSummary = "glSummary";
@@ -24,20 +25,35 @@ public class GroupManager extends Process {
 
     GroupManager() {
         this.host = Host.currentHost();
+        this.inbox = host.getName() + "gmInbox";
         this.myHeartbeat = host.getName() + "myHeartbeat";
         this.lcCharge = host.getName() + "lcCharge";
     }
 
     @Override
     public void main(String[] strings) throws MsgException {
-        NewGMMsg m = new NewGMMsg(host.getName(), gmHeartbeatNew, null, myHeartbeat);
+        SnoozeMsg m = new NewGMMsg(host.getName(), gmHeartbeatNew, null, myHeartbeat);
         m.send();
 
         while (true) {
-            beat();
+            try {
+                m = (SnoozeMsg) Task.receive(inbox);
+                handle(m);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
             summaryInfoToGL();
+            beat();
             sleep(1000);
         }
+    }
+
+    void handle(SnoozeMsg m) { Logger.log("[GL.handle] Unknown message" + m); }
+
+    void handle(NewLCMsg m) {
+        // join/rejoin LC
+        String host = (String) m.getMessage();
+        LocalControllerCharge lc = new LocalControllerCharge(host, 0, 0, new Date());
     }
 
     void receiveHostQuery() {

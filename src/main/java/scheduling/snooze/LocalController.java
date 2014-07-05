@@ -16,25 +16,26 @@ public class LocalController extends Process {
     private XHost host;
     private String groupManagerHostName;
     private int procCharge = 0;
+    private String inbox;
     private String lcCharge;
-    private String entryPointInbox = "entryPointInbox";
-    private String myBox;
+    private String entryPointInbox;
 
     LocalController(String name, XHost host, String n) throws UnknownHostException {
         this.name = name;
         this.host = host;
         this.groupManagerHostName = n;
-        this.myBox = host.getName() + "myBox";
+        this.entryPointInbox = "entryPointInbox";
+        this.inbox = host.getName() + "lcInbox";
         this.lcCharge = n + "lcCharge";
     }
 
     void join() {
-        JoinLCMsg joinCLMsg = new JoinLCMsg(host.getName(), entryPointInbox, name, myBox);
-        joinCLMsg.send();
+        NewLCMsg m = new NewLCMsg(host.getName(), entryPointInbox, name, inbox);
+        m.send();
     }
 
     void rejoin() {
-
+        join();
     }
 
     void totalHostCapacity() {

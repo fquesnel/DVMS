@@ -7,7 +7,6 @@ import org.simgrid.msg.Process;
  * Created by sudholt on 22/06/2014.
  */
 public class GLHeartbeatGroup extends Process {
-    private static GLHeartbeatGroup glhg = null;
     private static GroupLeader gl = null;
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";
@@ -26,11 +25,6 @@ public class GLHeartbeatGroup extends Process {
     }
 
     protected GLHeartbeatGroup() {}
-
-    public static GLHeartbeatGroup getGlhg() {
-        if (glhg == null) new GLHeartbeatGroup();
-        return glhg;
-    }
 
     void newGL() {
         try {
