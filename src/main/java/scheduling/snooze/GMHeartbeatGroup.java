@@ -11,7 +11,6 @@ import java.util.HashSet;
  * Created by sudholt on 22/06/2014.
  */
 public class GMHeartbeatGroup extends Process {
-    private static GMHeartbeatGroup gmhg = null;
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
     private HashSet<GroupManagerHeartbeat> gms = new HashSet<GroupManagerHeartbeat>();
@@ -35,11 +34,6 @@ public class GMHeartbeatGroup extends Process {
             recvGMBeats();
         }
 
-    }
-
-    public static GMHeartbeatGroup getGmhg() {
-        if (gmhg == null) new GMHeartbeatGroup();
-        return gmhg;
     }
 
     void newGMs(){
