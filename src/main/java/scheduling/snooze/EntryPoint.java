@@ -10,7 +10,7 @@ import org.simgrid.msg.Task;
 public class EntryPoint extends Process {
     private Host host;
     private GroupLeader gl;
-    private String inbox = "entryPointInbox";
+    private String inbox = "epInbox";
     private String glInbox = "glInbox";
 
     EntryPoint() {
@@ -32,7 +32,7 @@ public class EntryPoint extends Process {
 
     void handle(NewLCMsg m) { // join/rejoin LC
         if (gl != null) {
-            NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), glInbox, null, null);
+            NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
         } else Logger.log("[EP.handle] New LC without GL");
     }

@@ -13,7 +13,7 @@ import java.util.Hashtable;
  */
 public class GroupLeader extends Process {
     private Host host;
-    private Hashtable<String, GMChargeSummary> gMCs = new Hashtable<>();
+    private Hashtable<String, GMChargeSummary> gMCs = new Hashtable<>(); // ConcurrentHashMap more efficient
     private String inbox = "glInbox";
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";

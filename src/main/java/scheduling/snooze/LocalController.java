@@ -5,7 +5,7 @@ package scheduling.snooze;
  */
 
 import configuration.XHost;
-import org.simgrid.msg.MsgException;
+import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 
 import java.net.UnknownHostException;
@@ -14,24 +14,47 @@ public class LocalController extends Process {
 
     private String name;
     private XHost host;
-    private String groupManagerHostName;
+    private String gmHostname;
     private int procCharge = 0;
     private String inbox;
     private String lcCharge;
-    private String entryPointInbox;
+    private String epInbox;
 
-    LocalController(String name, XHost host, String n) throws UnknownHostException {
+    LocalController(String name, XHost host) throws UnknownHostException {
         this.name = name;
         this.host = host;
-        this.groupManagerHostName = n;
-        this.entryPointInbox = "entryPointInbox";
+        this.epInbox = "epInbox";
         this.inbox = host.getName() + "lcInbox";
-        this.lcCharge = n + "lcCharge";
     }
 
+    @Override
+    public void main(String[] args) throws MsgException {
+        join();
+        while (true) {
+            try{
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    /**
+     * Send join request to EP and wait for GM acknowledgement
+     */
     void join() {
-        NewLCMsg m = new NewLCMsg(host.getName(), entryPointInbox, name, inbox);
+        // Send join request to EP
+        NewLCMsg m = new NewLCMsg(host.getName(), epInbox, name, inbox);
         m.send();
+        try {
+            // Wait for GM acknowledgement
+            m = (NewLCMsg) Task.receive(inbox, 2);
+            gmHostname = (String) m.getMessage();
+            lcCharge = gmHostname + "lcCharge";
+        } catch (TimeoutException e) {
+            Logger.log("[LC.join] No joining" + this);
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     void rejoin() {
@@ -59,15 +82,6 @@ public class LocalController extends Process {
 
     void migrateVM() {
 
-    }
-
-    @Override
-    public void main(String[] args) throws MsgException {
-        while (true) {
-            try{
-            } catch (Exception e) {
-            }
-        }
     }
 
 }

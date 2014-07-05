@@ -13,8 +13,8 @@ import java.util.Hashtable;
  */
 public class GroupManager extends Process {
     private Host host;
-    private GroupLeader gl;
-    private Hashtable<String, LocalControllerCharge> lCCs;
+    private String glHost;
+    private Hashtable<String, LocalControllerCharge> lCCs;  // ConcurrentHashMap more efficient?
     private GMChargeSummary cs = new GMChargeSummary(host.getName(), 0, 0, null);
     private String inbox;
     private String gmHeartbeatNew = "gmHeartbeatNew";
@@ -42,6 +42,7 @@ public class GroupManager extends Process {
             } catch(Exception e) {
                 e.printStackTrace();
             }
+            updateLCCharge();
             summaryInfoToGL();
             beat();
             sleep(1000);
@@ -51,9 +52,13 @@ public class GroupManager extends Process {
     void handle(SnoozeMsg m) { Logger.log("[GL.handle] Unknown message" + m); }
 
     void handle(NewLCMsg m) {
-        // join/rejoin LC
-        String host = (String) m.getMessage();
-        LocalControllerCharge lc = new LocalControllerCharge(host, 0, 0, new Date());
+        // Get join request
+        String lcHost = (String) m.getMessage();
+        LocalControllerCharge lc = new LocalControllerCharge(lcHost, 0, 0, new Date());
+        lCCs.put(lcHost, lc);
+        // Send acknowledgment
+        m = new NewLCMsg(host.getName(), m.getReplyBox(), null, null);
+        m.send();
     }
 
     void receiveHostQuery() {
