@@ -6,7 +6,7 @@ import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
 
 import java.util.Date;
-import java.util.Hashtable;
+import java.util.HashSet;
 
 /**
  * Created by sudholt on 25/05/2014.
@@ -14,7 +14,7 @@ import java.util.Hashtable;
 public class GroupManager extends Process {
     private Host host;
     private String glHost;
-    private Hashtable<String, LocalControllerCharge> lCCs;  // ConcurrentHashMap more efficient?
+    private HashSet<LocalControllerCharge> lCCs;  // ConcurrentHashMap more efficient?
     private GMChargeSummary cs = new GMChargeSummary(host.getName(), 0, 0, null);
     private String inbox;
     private String gmHeartbeatNew = "gmHeartbeatNew";
@@ -53,12 +53,28 @@ public class GroupManager extends Process {
 
     void handle(NewLCMsg m) {
         // Get join request
-        String lcHost = (String) m.getMessage();
-        LocalControllerCharge lc = new LocalControllerCharge(lcHost, 0, 0, new Date());
-        lCCs.put(lcHost, lc);
+        LocalControllerCharge lc = new LocalControllerCharge((String) m.getMessage(), 0, 0, new Date());
+        lCCs.add(lc);
         // Send acknowledgment
         m = new NewLCMsg(host.getName(), m.getReplyBox(), null, null);
         m.send();
+    }
+
+    void recvLCBeats() {
+/*
+        try{
+
+            for (LocalControllerCharge lc: lCCs) {
+                BeatLCMsg m = (BeatLCMsg) Task.receive(lc.getHostName()+"beat", 2);
+                Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
+            }
+        } catch (org.simgrid.msg.TimeoutException te) {
+            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GL dead");
+            te.printStackTrace();
+        } catch (Exception e) {
+            Logger.log(e);
+        }
+*/
     }
 
     void receiveHostQuery() {
@@ -100,7 +116,7 @@ public class GroupManager extends Process {
         int proc = 0;
         int mem = 0;
         int s = lCCs.size();
-        for(LocalControllerCharge lc: lCCs.values()) {
+        for(LocalControllerCharge lc: lCCs) {
             proc += lc.getProcCharge();
             mem += lc.getMemUsed();
         }
@@ -116,7 +132,7 @@ public class GroupManager extends Process {
                 m = (GMSumMsg) m;
                 LocalControllerCharge cs = (LocalControllerCharge) m.getMessage();
                 cs.setTimeStamp(new Date());
-                lCCs.put(cs.getHostName(), cs);
+                lCCs.add(cs);
             } catch (Exception e) {
                 e.printStackTrace();
             }

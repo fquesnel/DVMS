@@ -32,7 +32,7 @@ public class GMHeartbeatGroup extends Process {
     public void main(String[] strings) throws MsgException {
         while (true) {
             newGMs();
-            beatGMs();
+            recvGMBeats();
         }
 
     }
@@ -53,7 +53,7 @@ public class GMHeartbeatGroup extends Process {
         }
     }
 
-    void beatGMs() {
+    void recvGMBeats() {
         try{
             for (GroupManagerHeartbeat gm : gms) {
                 BeatGMMsg req = (BeatGMMsg) Task.receive(gm.mb, 2);

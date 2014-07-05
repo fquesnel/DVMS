@@ -47,9 +47,9 @@ public class GLHeartbeatGroup extends Process {
 
     void beatGLs() {
         try{
-            BeatGLMsg req = (BeatGLMsg) Task.receive(glHeartbeatBeat, 2);
-            Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
-            GroupLeader gl = (GroupLeader) req.getMessage();
+            BeatGLMsg m = (BeatGLMsg) Task.receive(glHeartbeatBeat, 2);
+            Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
+            GroupLeader gl = (GroupLeader) m.getMessage();
 
             if (GLHeartbeatGroup.gl != null && GLHeartbeatGroup.gl != gl)
                 Logger.log("[GLHeartbeatGroup] Err: multiple GLs");
