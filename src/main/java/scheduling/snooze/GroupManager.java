@@ -6,6 +6,7 @@ import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Hashtable;
 
 /**
@@ -37,16 +38,22 @@ public class GroupManager extends Process {
         m.send();
 
         while (true) {
-            try {
-                m = (SnoozeMsg) Task.receive(inbox);
-                handle(m);
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
+            handleInbox();
             updateLCCharge();
+            recvLCBeats();
+            deadLCs();
             summaryInfoToGL();
             beat();
             sleep(1000);
+        }
+    }
+
+    void handleInbox() {
+        try {
+            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+            handle(m);
+        } catch(Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -84,6 +91,28 @@ public class GroupManager extends Process {
             te.printStackTrace();
         } catch (Exception e) {
             Logger.log(e);
+        }
+    }
+
+    /**
+     * Identify and handle dead LCs
+     */
+    void deadLCs() {
+        // Identify dead LCs
+        HashSet<String> deadLCs = new HashSet<String>();
+        for (String lcHostname: lcInfo.keySet()) {
+            long curTime = new Date().getTime();
+            long lcTime  = lcInfo.get(lcHostname).heartbeatTimestamp.getTime();
+            if (curTime-lcTime > CONST.HeartbeatTimeout) {
+                deadLCs.add(lcHostname);
+                Logger.log("[deadLCs] LC " + lcHostname + "is dead");
+            }
+        }
+
+        // Remove dead LCs
+        for (String lcHostname: deadLCs) {
+            lcInfo.remove(lcHostname);
+            // TODO: interaction with scheduling (other operations)?
         }
     }
 
