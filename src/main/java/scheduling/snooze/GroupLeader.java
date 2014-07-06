@@ -4,6 +4,7 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
+import scheduling.snooze.msg.*;
 
 import java.util.Date;
 import java.util.Hashtable;
@@ -13,7 +14,7 @@ import java.util.Hashtable;
  */
 public class GroupLeader extends Process {
     private Host host;
-    private Hashtable<String, GMChargeSummary> gMCs = new Hashtable<>(); // ConcurrentHashMap more efficient
+    private Hashtable<String, GMSum> gmInfo = new Hashtable<>(); // ConcurrentHashMap more efficient
     private String inbox = "glInbox";
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";
@@ -44,16 +45,17 @@ public class GroupLeader extends Process {
 
     void handle(SnoozeMsg m) { Logger.log("[GroupLeader.handle] Unknown message" + m); }
 
+    /**
+     * Join/rejoin LC: assign LC to least charged GroupManager
+     */
     void handle(NewLCMsg m) {
-        // join/rejoin LC: assign LC to least charged GroupManager
-
-        // identify least charge GroupManager
+        // identify least charged GroupManager
         String gmHost = "";
         double minCharge = 2, curCharge;
-        GMChargeSummary cs;
-        for (String s: gMCs.keySet()) {
-            cs        = gMCs.get(s);
-            curCharge = cs.getProcCharge() + cs.getMemUsed();
+        GMSum cs;
+        for (String s: gmInfo.keySet()) {
+            cs        = gmInfo.get(s);
+            curCharge = cs.procCharge + cs.memUsed;
             if (minCharge > curCharge) { minCharge = curCharge; gmHost = s; }
         };
         // relay message
@@ -61,15 +63,28 @@ public class GroupLeader extends Process {
         m.send();
     }
 
+    /**
+     * Join GM
+     */
+    void handle(NewGMMsg m) {
+        String gmHostname = (String) m.getMessage();
+        if (gmInfo.containsKey(gmHostname)) Logger.log("[GL.handle] GM " + gmHostname + " exists already");
+        // Add GM
+        GMSum cs = new GMSum(0, 0, new Date());
+        // Acknowledge integration
+        m = new NewGMMsg((String) m.getMessage(), m.getReplyBox(), null, null);
+        m.send();
+    }
+
     void updateSummaryInfo() {
-        // accepts all pending summary messages, adds time stamps and stores the entries in gMCs
+        // accepts all pending summary messages, adds time stamps and stores the entries in gmInfo
         while (Task.listen(glSummary)) {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(glSummary);
                 m = (GMSumMsg) m;
-                GMChargeSummary cs = (GMChargeSummary) m.getMessage();
-                cs.setTimeStamp(new Date());
-                gMCs.put(cs.getHostName(), cs);
+                GMSum cs = (GMSum) m.getMessage();
+                cs.timestamp = new Date();
+                gmInfo.put(m.getOrigin(), cs);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -87,5 +102,18 @@ public class GroupLeader extends Process {
     void beat() {
         BeatGLMsg m = new BeatGLMsg(host.getName(), glHeartbeatBeat, null, null);
         m.send();
+    }
+
+    /**
+     * GM charge summary info
+     */
+    public class GMSum {
+        double procCharge;
+        int    memUsed;
+        Date   timestamp;
+
+        GMSum(double p, int m, Date ts) {
+            this.procCharge = p; this.memUsed = m; this.timestamp = ts;
+        }
     }
 }

@@ -3,6 +3,10 @@ package scheduling.snooze;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
+import scheduling.snooze.msg.NewGLMsg;
+import scheduling.snooze.msg.NewGMMsg;
+import scheduling.snooze.msg.NewLCMsg;
+import scheduling.snooze.msg.SnoozeMsg;
 
 /**
  * Created by sudholt on 22/06/2014.
@@ -32,14 +36,21 @@ public class EntryPoint extends Process {
         Logger.log("[EP.handle] Unknown message" + m);
     }
 
+    void handle(NewGLMsg m) {
+        glHostname = (String) m.getMessage();
+    }
+
+    void handle (NewGMMsg m) {
+        if (glHostname != "") {
+            NewGMMsg mGl = new NewGMMsg((String) m.getMessage(), glInbox, m.getOrigin(), m.getReplyBox());
+            mGl.send();
+        } else Logger.log("[EP.handle] New GM without GroupLeader");
+    }
+
     void handle(NewLCMsg m) { // Join/rejoin LC
         if (glHostname != "") {
             NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
         } else Logger.log("[EP.handle] New LC without GroupLeader");
-    }
-
-    void handle(NewGLMsg m) {
-        glHostname = (String) m.getMessage();
     }
 }

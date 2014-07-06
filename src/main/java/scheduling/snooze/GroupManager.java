@@ -4,6 +4,7 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
+import scheduling.snooze.msg.*;
 
 import java.util.Date;
 import java.util.HashSet;
@@ -17,7 +18,8 @@ public class GroupManager extends Process {
     private String glHost;
     private Hashtable<String, LCInfo> lcInfo;  // ConcurrentHashMap more efficient?
     // one mailbox per LC: lcHostname+"beat"
-    private GMChargeSummary chargeSummary = new GMChargeSummary(host.getName(), 0, 0, null);
+    private double procSum;
+    private int    memSum;
     private String inbox;
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
@@ -74,7 +76,7 @@ public class GroupManager extends Process {
     }
 
     /**
-     * Listens async. for heartbeats from all known LCs
+     * Listens asynchronously for heartbeats from all known LCs
      */
     void recvLCBeats() {
         BeatLCMsg m = null;
@@ -145,7 +147,8 @@ public class GroupManager extends Process {
      */
     void summaryInfoToGL() {
         updateChargeSummary();
-        GMSumMsg m = new GMSumMsg(chargeSummary, glSummary, null, null);
+        GMSumMsg.GMSum c = new GMSumMsg.GMSum(procSum, memSum);
+        GMSumMsg m = new GMSumMsg(c, glSummary, host.getName(), null);
         m.send();
     }
 
@@ -170,11 +173,11 @@ public class GroupManager extends Process {
             mem += lci.charge.memUsed;
         }
         proc /= s; mem /= s;
-        chargeSummary.setProcCharge(proc); chargeSummary.setMemUsed(mem);
+        procSum = proc; memSum = mem;
     }
 
     /**
-     * Accepts async. all pending LC charge messages, adds time stamps and updates lcInfo
+     * Accepts asynchronously all pending LC charge messages, adds time stamps and updates lcInfo
      */
     void updateLCCharge() {
         while (Task.listen(glSummary)) {
@@ -183,7 +186,7 @@ public class GroupManager extends Process {
                 m = (GMSumMsg) m;
                 String lcHostname = (String) m.getOrigin();
                 LCChargeMsg.LCCharge cs = (LCChargeMsg.LCCharge) m.getMessage();
-                LCCharge newCharge = new LCCharge(cs.procCharge, cs.memUsed, new Date());
+                LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), new Date());
                 Date oldBeat = lcInfo.get(lcHostname).heartbeatTimestamp;
                 lcInfo.put(lcHostname, new LCInfo(newCharge, oldBeat));
             } catch (Exception e) {

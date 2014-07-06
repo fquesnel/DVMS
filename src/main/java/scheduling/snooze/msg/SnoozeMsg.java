@@ -1,4 +1,4 @@
-package scheduling.snooze;
+package scheduling.snooze.msg;
 
 
 import org.simgrid.msg.Task;

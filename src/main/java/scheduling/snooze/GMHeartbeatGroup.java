@@ -4,6 +4,8 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
+import scheduling.snooze.msg.BeatGMMsg;
+import scheduling.snooze.msg.NewGMMsg;
 
 import java.util.HashSet;
 

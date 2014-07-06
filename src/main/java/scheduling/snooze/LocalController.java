@@ -9,6 +9,9 @@ import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
 import org.simgrid.msg.TimeoutException;
+import scheduling.snooze.msg.BeatLCMsg;
+import scheduling.snooze.msg.LCChargeMsg;
+import scheduling.snooze.msg.NewLCMsg;
 
 import java.net.UnknownHostException;
 
@@ -73,9 +76,8 @@ public class LocalController extends Process {
     }
 
     void lcChargeToGM() {
-        LCChargeMsg m = null;
-        LCChargeMsg.LCCharge lc = m.new LCCharge(host.getCPUDemand(), host.getMemDemand());
-        m = new LCChargeMsg(lc, lcCharge, host.getName(), null);
+        LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(host.getCPUDemand(), host.getMemDemand());
+        LCChargeMsg m = new LCChargeMsg(lc, lcCharge, host.getName(), null);
         m.send();
     }
 

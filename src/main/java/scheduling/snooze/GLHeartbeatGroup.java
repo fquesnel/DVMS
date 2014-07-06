@@ -2,6 +2,8 @@ package scheduling.snooze;
 
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import scheduling.snooze.msg.BeatGLMsg;
+import scheduling.snooze.msg.NewGLMsg;
 
 /**
  * Created by sudholt on 22/06/2014.
