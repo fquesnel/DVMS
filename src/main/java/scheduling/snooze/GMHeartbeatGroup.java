@@ -54,7 +54,7 @@ public class GMHeartbeatGroup extends Process {
                 Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
             }
         } catch (org.simgrid.msg.TimeoutException te) {
-            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GL dead");
+            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GroupLeader dead");
             te.printStackTrace();
         } catch (Exception e) {
             Logger.log(e);

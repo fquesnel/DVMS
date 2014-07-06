@@ -6,7 +6,7 @@ import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
 
 import java.util.Date;
-import java.util.HashSet;
+import java.util.Hashtable;
 
 /**
  * Created by sudholt on 25/05/2014.
@@ -14,8 +14,9 @@ import java.util.HashSet;
 public class GroupManager extends Process {
     private Host host;
     private String glHost;
-    private HashSet<LocalControllerCharge> lCCs;  // ConcurrentHashMap more efficient?
-    private GMChargeSummary cs = new GMChargeSummary(host.getName(), 0, 0, null);
+    private Hashtable<String, LCInfo> lcInfo;  // ConcurrentHashMap more efficient?
+    // one mailbox per LC: lcHostname+"beat"
+    private GMChargeSummary chargeSummary = new GMChargeSummary(host.getName(), 0, 0, null);
     private String inbox;
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
@@ -49,32 +50,41 @@ public class GroupManager extends Process {
         }
     }
 
-    void handle(SnoozeMsg m) { Logger.log("[GL.handle] Unknown message" + m); }
+    void handle(SnoozeMsg m) { Logger.log("[GroupLeader.handle] Unknown message" + m); }
 
+    /**
+     * Integrate new LCs
+     */
     void handle(NewLCMsg m) {
-        // Get join request
-        LocalControllerCharge lc = new LocalControllerCharge((String) m.getMessage(), 0, 0, new Date());
-        lCCs.add(lc);
+        String lcHostname = (String) m.getMessage();
+        Date   ts  = new Date();
+        // Init LC charge and heartbeat
+        LCInfo    lci = new LCInfo(new LCCharge(0, 0, ts), ts);
+        lcInfo.put(lcHostname, lci);
         // Send acknowledgment
         m = new NewLCMsg(host.getName(), m.getReplyBox(), null, null);
         m.send();
     }
 
+    /**
+     * Listens async. for heartbeats from all known LCs
+     */
     void recvLCBeats() {
-/*
+        BeatLCMsg m = null;
         try{
-
-            for (LocalControllerCharge lc: lCCs) {
-                BeatLCMsg m = (BeatLCMsg) Task.receive(lc.getHostName()+"beat", 2);
-                Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
+            for (String lcHostname: lcInfo.keySet()) {
+                String lcBeatBox = lcHostname+"lcBeat";
+                if (Task.listen(lcBeatBox)) {
+                    m = (BeatLCMsg) Task.receive(lcBeatBox);
+                }
+                Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
             }
         } catch (org.simgrid.msg.TimeoutException te) {
-            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GL dead");
+            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GroupLeader dead");
             te.printStackTrace();
         } catch (Exception e) {
             Logger.log(e);
         }
-*/
     }
 
     void receiveHostQuery() {
@@ -101,42 +111,81 @@ public class GroupManager extends Process {
 
     }
 
+    /**
+     * Sends GM charge summary info to GL
+     */
     void summaryInfoToGL() {
-        calcSummary();
-        GMSumMsg m = new GMSumMsg(cs, glSummary, null, null);
+        updateChargeSummary();
+        GMSumMsg m = new GMSumMsg(chargeSummary, glSummary, null, null);
         m.send();
     }
 
+    /**
+     * Sends a GM heatbeat
+     */
     void beat() {
         BeatGMMsg m = new BeatGMMsg(host.getName(), gmHeartbeatBeat, null, null);
         m.send();
     }
 
-    void calcSummary() {
+    /**
+     * Updates charge summary based on local LC charge info
+     */
+    void updateChargeSummary() {
         int proc = 0;
         int mem = 0;
-        int s = lCCs.size();
-        for(LocalControllerCharge lc: lCCs) {
-            proc += lc.getProcCharge();
-            mem += lc.getMemUsed();
+        int s = lcInfo.size();
+        for(String lcHostname: lcInfo.keySet()) {
+            LCInfo lci = lcInfo.get(lcHostname);
+            proc += lci.charge.procCharge;
+            mem += lci.charge.memUsed;
         }
         proc /= s; mem /= s;
-        cs.setProcCharge(proc); cs.setMemUsed(mem);
+        chargeSummary.setProcCharge(proc); chargeSummary.setMemUsed(mem);
     }
 
+    /**
+     * Accepts async. all pending LC charge messages, adds time stamps and updates lcInfo
+     */
     void updateLCCharge() {
-        // accepts all pending charge messages, adds time stamps and stores the entries in gMCs
         while (Task.listen(glSummary)) {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(glSummary);
                 m = (GMSumMsg) m;
-                LocalControllerCharge cs = (LocalControllerCharge) m.getMessage();
-                cs.setTimeStamp(new Date());
-                lCCs.add(cs);
+                String lcHostname = (String) m.getOrigin();
+                LCChargeMsg.LCCharge cs = (LCChargeMsg.LCCharge) m.getMessage();
+                LCCharge newCharge = new LCCharge(cs.procCharge, cs.memUsed, new Date());
+                Date oldBeat = lcInfo.get(lcHostname).heartbeatTimestamp;
+                lcInfo.put(lcHostname, new LCInfo(newCharge, oldBeat));
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
+    }
+
+    /**
+     * Stores LC charge info (cpu, mem, timestamp)
+     */
+    class LCCharge {
+        double procCharge;
+        int memUsed;
+        Date timeStamp;
+
+        LCCharge(double proc, int mem, Date ts) {
+            this.procCharge = proc; this.memUsed = mem; this.timeStamp = ts;
+        }
+    }
+
+    /**
+     * Contains all LC-related info (charge info, heartbeat timestamps)
+     */
+    class LCInfo {
+        LCCharge charge;
+        Date heartbeatTimestamp;
+
+        LCInfo(LCCharge c, Date ts) {
+            this.charge = c; this.heartbeatTimestamp = ts;
+        }
     }
 }

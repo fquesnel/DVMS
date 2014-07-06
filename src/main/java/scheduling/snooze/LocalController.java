@@ -5,8 +5,10 @@ package scheduling.snooze;
  */
 
 import configuration.XHost;
-import org.simgrid.msg.*;
+import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
+import org.simgrid.msg.Task;
+import org.simgrid.msg.TimeoutException;
 
 import java.net.UnknownHostException;
 
@@ -17,8 +19,9 @@ public class LocalController extends Process {
     private String gmHostname;
     private int procCharge = 0;
     private String inbox;
-    private String lcCharge;
     private String epInbox;
+    private String lcCharge; // GM mbox
+    private String lcBeat;   // GM mbox
 
     LocalController(String name, XHost host) throws UnknownHostException {
         this.name = name;
@@ -32,23 +35,27 @@ public class LocalController extends Process {
         join();
         while (true) {
             try{
+                beat();
+                sleep(1000);
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
     /**
-     * Send join request to EP and wait for GM acknowledgement
+     * Send join request to EP and wait for GroupManager acknowledgement
      */
     void join() {
         // Send join request to EP
         NewLCMsg m = new NewLCMsg(host.getName(), epInbox, name, inbox);
         m.send();
         try {
-            // Wait for GM acknowledgement
+            // Wait for GroupManager acknowledgement
             m = (NewLCMsg) Task.receive(inbox, 2);
             gmHostname = (String) m.getMessage();
             lcCharge = gmHostname + "lcCharge";
+            lcBeat = host.getName() + "lcBeat";
         } catch (TimeoutException e) {
             Logger.log("[LC.join] No joining" + this);
             e.printStackTrace();
@@ -66,11 +73,18 @@ public class LocalController extends Process {
     }
 
     void lcChargeToGM() {
-        LocalControllerCharge
-            lc = new LocalControllerCharge(host.getName(), host.getCPUDemand(), host.getMemDemand(), null);
-        LCChargeMsg m = new LCChargeMsg(lc, lcCharge, null, null);
+        LCChargeMsg m = null;
+        LCChargeMsg.LCCharge lc = m.new LCCharge(host.getCPUDemand(), host.getMemDemand());
+        m = new LCChargeMsg(lc, lcCharge, host.getName(), null);
         m.send();
     }
+
+
+    void beat() {
+        BeatLCMsg m = new BeatLCMsg(host.getName(), lcBeat, host.getName(), null);
+        m.send();
+    }
+
 
     void startVM() {
 

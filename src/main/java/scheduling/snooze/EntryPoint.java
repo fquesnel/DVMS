@@ -36,7 +36,7 @@ public class EntryPoint extends Process {
         if (glHostname != "") {
             NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
-        } else Logger.log("[EP.handle] New LC without GL");
+        } else Logger.log("[EP.handle] New LC without GroupLeader");
     }
 
     void handle(NewGLMsg m) {

@@ -28,11 +28,11 @@ public class GLHeartbeatGroup extends Process {
     protected GLHeartbeatGroup() {}
 
     /**
-     * Register new GL and notify EP.
+     * Register new GroupLeader and notify EP.
      */
     void newGL() {
         try {
-            // Store GL
+            // Store GroupLeader
             NewGLMsg m = (NewGLMsg) Task.receive(glHeartbeatNew);
             if (gl == null) GLHeartbeatGroup.setGl((GroupLeader) m.getMessage());
             else Logger.log("GLHeartbeatGroup:newGL, ERROR: 2nd GroupLeader" + m);
@@ -54,7 +54,7 @@ public class GLHeartbeatGroup extends Process {
             if (GLHeartbeatGroup.gl != null && GLHeartbeatGroup.gl != gl)
                 Logger.log("[GLHeartbeatGroup] Err: multiple GLs");
         } catch (org.simgrid.msg.TimeoutException te) {
-            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GL dead");
+            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GroupLeader dead");
             te.printStackTrace();
         } catch (Exception e) {
             Logger.log(e);

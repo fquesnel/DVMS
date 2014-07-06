@@ -42,12 +42,12 @@ public class GroupLeader extends Process {
         }
     }
 
-    void handle(SnoozeMsg m) { Logger.log("[GL.handle] Unknown message" + m); }
+    void handle(SnoozeMsg m) { Logger.log("[GroupLeader.handle] Unknown message" + m); }
 
     void handle(NewLCMsg m) {
-        // join/rejoin LC: assign LC to least charged GM
+        // join/rejoin LC: assign LC to least charged GroupManager
 
-        // identify least charge GM
+        // identify least charge GroupManager
         String gmHost = "";
         double minCharge = 2, curCharge;
         GMChargeSummary cs;
