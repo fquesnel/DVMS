@@ -71,6 +71,7 @@ public class GroupLeader extends Process {
         if (gmInfo.containsKey(gmHostname)) Logger.log("[GL.handle] GM " + gmHostname + " exists already");
         // Add GM
         GMSum cs = new GMSum(0, 0, new Date());
+        gmInfo.put(gmHostname, cs);
         // Acknowledge integration
         m = new NewGMMsg((String) m.getMessage(), m.getReplyBox(), null, null);
         m.send();

@@ -22,14 +22,12 @@ public class LocalController extends Process {
     private String gmHostname;
     private int procCharge = 0;
     private String inbox;
-    private String epInbox;
     private String lcCharge; // GM mbox
     private String lcBeat;   // GM mbox
 
     LocalController(String name, XHost host) throws UnknownHostException {
         this.name = name;
         this.host = host;
-        this.epInbox = "epInbox";
         this.inbox = host.getName() + "lcInbox";
     }
 
@@ -51,7 +49,7 @@ public class LocalController extends Process {
      */
     void join() {
         // Send join request to EP
-        NewLCMsg m = new NewLCMsg(host.getName(), epInbox, name, inbox);
+        NewLCMsg m = new NewLCMsg(host.getName(), CONST.epInbox, name, inbox);
         m.send();
         try {
             // Wait for GroupManager acknowledgement

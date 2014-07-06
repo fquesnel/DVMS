@@ -1,9 +1,7 @@
 package scheduling.snooze;
 
-import org.simgrid.msg.Host;
-import org.simgrid.msg.MsgException;
+import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import org.simgrid.msg.Task;
 import scheduling.snooze.msg.*;
 
 import java.util.Date;
@@ -20,10 +18,10 @@ public class GroupManager extends Process {
     // one mailbox per LC: lcHostname+"beat"
     private double procSum;
     private int    memSum;
+    private String glSummary = "glSummary";
     private String inbox;
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
-    private String glSummary = "glSummary";
     private String lcCharge;
     private String myHeartbeat;
 
@@ -76,7 +74,26 @@ public class GroupManager extends Process {
     }
 
     /**
-     * Listens asynchronously for heartbeats from all known LCs
+     * Send join request to EP and wait for GroupLeader acknowledgement
+     */
+    void join() {
+        // Send join request to EP
+        NewGMMsg m = new NewGMMsg(host.getName(), CONST.epInbox, name, inbox);
+        m.send();
+        try {
+            // Wait for GroupManager acknowledgement
+            m = (NewGMMsg) Task.receive(inbox, 2);
+            glHost = (String) m.getMessage();
+        } catch (TimeoutException e) {
+            Logger.log("[GM.join] No joining" + host.getName());
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Listen asynchronously for heartbeats from all known LCs
      */
     void recvLCBeats() {
         BeatLCMsg m = null;
@@ -153,7 +170,7 @@ public class GroupManager extends Process {
     }
 
     /**
-     * Sends a GM heatbeat
+     * Sends a GM heartbeat
      */
     void beat() {
         BeatGMMsg m = new BeatGMMsg(host.getName(), gmHeartbeatBeat, null, null);
@@ -197,7 +214,7 @@ public class GroupManager extends Process {
     }
 
     /**
-     * Stores LC charge info (cpu, mem, timestamp)
+     * LC charge info (proc, mem, timestamp)
      */
     class LCCharge {
         double procCharge;
@@ -210,7 +227,7 @@ public class GroupManager extends Process {
     }
 
     /**
-     * Contains all LC-related info (charge info, heartbeat timestamps)
+     * LC-related info (charge info, heartbeat, timestamps)
      */
     class LCInfo {
         LCCharge charge;

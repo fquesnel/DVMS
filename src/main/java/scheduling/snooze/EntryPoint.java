@@ -44,7 +44,10 @@ public class EntryPoint extends Process {
         if (glHostname != "") {
             NewGMMsg mGl = new NewGMMsg((String) m.getMessage(), glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
-        } else Logger.log("[EP.handle] New GM without GroupLeader");
+        } else {
+            // TODO: Leader election
+            Logger.log("[EP.handle] New GM without GroupLeader");
+        }
     }
 
     void handle(NewLCMsg m) { // Join/rejoin LC
