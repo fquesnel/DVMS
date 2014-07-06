@@ -15,7 +15,6 @@ import java.util.Hashtable;
 public class GroupLeader extends Process {
     private Host host;
     private Hashtable<String, GMSum> gmInfo = new Hashtable<>(); // ConcurrentHashMap more efficient
-    private String inbox = "glInbox";
     private String glHeartbeatNew = "glHeartbeatNew";
     private String glHeartbeatBeat = "glHeartbeatBeat";
     private String glSummary = "glSummary";
@@ -32,7 +31,7 @@ public class GroupLeader extends Process {
 
         while (true) {
             try {
-                m = (SnoozeMsg) Task.receive(inbox);
+                m = (SnoozeMsg) Task.receive(CONST.glInbox);
                 handle(m);
             } catch(Exception e) {
                 e.printStackTrace();

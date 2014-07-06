@@ -5,5 +5,6 @@ package scheduling.snooze;
  */
 public class CONST {
     static final String epInbox = "epInbox";
+    static final String glInbox = "glInbox";
     static final long HeartbeatTimeout = 2000;
 }
