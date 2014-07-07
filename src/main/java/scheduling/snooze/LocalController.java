@@ -81,7 +81,7 @@ public class LocalController extends Process {
 
 
     void beat() {
-        BeatLCMsg m = new BeatLCMsg(host.getName(), lcBeat, host.getName(), null);
+        BeatLCMsg m = new BeatLCMsg(host.getName(), lcBeat, null, null);
         m.send();
     }
 

@@ -106,7 +106,7 @@ public class GroupManager extends Process {
                 Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
             }
         } catch (org.simgrid.msg.TimeoutException te) {
-            Logger.log("GLHeartbeatGroup::receiveAnnounceGLMsg: timeout, GroupLeader dead");
+            Logger.log("HeartbeatGroup::receiveAnnounceGLMsg: timeout, GroupLeader dead");
             te.printStackTrace();
         } catch (Exception e) {
             Logger.log(e);
