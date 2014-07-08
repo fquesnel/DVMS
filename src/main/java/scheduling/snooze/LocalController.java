@@ -5,21 +5,22 @@ package scheduling.snooze;
  */
 
 import configuration.XHost;
-import org.simgrid.msg.MsgException;
+import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import org.simgrid.msg.Task;
-import org.simgrid.msg.TimeoutException;
+import scheduling.snooze.msg.BeatGMMsg;
 import scheduling.snooze.msg.BeatLCMsg;
 import scheduling.snooze.msg.LCChargeMsg;
 import scheduling.snooze.msg.NewLCMsg;
 
 import java.net.UnknownHostException;
+import java.util.Date;
 
 public class LocalController extends Process {
 
     private String name;
     private XHost host;
     private String gmHostname;
+    private Date gmBeatTimestamp;
     private int procCharge = 0;
     private String inbox;
     private String lcCharge; // GM mbox
@@ -37,7 +38,9 @@ public class LocalController extends Process {
         while (true) {
             try{
                 beat();
-                sleep(1000);
+                recvGMbeat();
+                gmDead();
+                sleep(AUX.HeartbeatInterval);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -53,7 +56,7 @@ public class LocalController extends Process {
         m.send();
         try {
             // Wait for GroupManager acknowledgement
-            m = (NewLCMsg) Task.receive(inbox, 2);
+            m = (NewLCMsg) Task.receive(inbox, AUX.JoinAcknowledgementTimeout);
             gmHostname = (String) m.getMessage();
             lcCharge = gmHostname + "lcCharge";
             lcBeat = host.getName() + "lcBeat";
@@ -85,6 +88,22 @@ public class LocalController extends Process {
         m.send();
     }
 
+    void recvGMbeat() {
+        try{
+            BeatGMMsg m = (BeatGMMsg) AUX.arecv(HeartbeatGroup.getGlHeartbeatBeat());
+            Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
+            String gm = (String) m.getMessage();
+
+            if   (gmHostname != null && gmHostname != gm) Logger.log("[LC] Err: multiple GMs");
+            else gmBeatTimestamp = new Date();
+        } catch (Exception e) {
+            Logger.log(e);
+        }
+    }
+
+    void gmDead() {
+        if (AUX.timeDiff(gmBeatTimestamp) > AUX.HeartbeatTimeout) rejoin();
+    }
 
     void startVM() {
 

@@ -44,7 +44,7 @@ public class GroupManager extends Process {
             deadLCs();
             summaryInfoToGL();
             beat();
-            sleep(1000);
+            sleep(AUX.HeartbeatInterval);
         }
     }
 
@@ -111,9 +111,7 @@ public class GroupManager extends Process {
         // Identify dead LCs
         HashSet<String> deadLCs = new HashSet<String>();
         for (String lcHostname: lcInfo.keySet()) {
-            long curTime = new Date().getTime();
-            long lcTime  = lcInfo.get(lcHostname).heartbeatTimestamp.getTime();
-            if (curTime-lcTime > AUX.HeartbeatTimeout) {
+            if (AUX.timeDiff(lcInfo.get(lcHostname).heartbeatTimestamp) > AUX.HeartbeatTimeout) {
                 deadLCs.add(lcHostname);
                 Logger.log("[deadLCs] LC " + lcHostname + "is dead");
             }
@@ -164,8 +162,15 @@ public class GroupManager extends Process {
      * Sends a GM heartbeat
      */
     void beat() {
+        // Beat to heartbeat group
         BeatGMMsg m = new BeatGMMsg(host.getName(), gmHeartbeatBeat, null, null);
         m.send();
+
+        // Beat to LCs
+        for (String lc: lcInfo.keySet()) {
+            m = new BeatGMMsg(host.getName(), gmHeartbeatBeat, null, null);
+            m.send();
+        }
     }
 
     /**

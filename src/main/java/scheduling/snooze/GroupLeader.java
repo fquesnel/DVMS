@@ -38,7 +38,7 @@ public class GroupLeader extends Process {
             }
             updateSummaryInfo();
             beat();
-            sleep(1000);
+            sleep(AUX.HeartbeatInterval);
         }
     }
 
