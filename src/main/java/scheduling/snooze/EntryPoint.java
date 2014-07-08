@@ -22,7 +22,7 @@ public class EntryPoint extends Process {
     public void main(String args[]) {
         while (true) {
             try {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(CONST.epInbox);
+                SnoozeMsg m = (SnoozeMsg) Task.receive(AUX.epInbox);
                 handle(m);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -40,7 +40,7 @@ public class EntryPoint extends Process {
 
     void handle (NewGMMsg m) {
         if (glHostname != "") {
-            NewGMMsg mGl = new NewGMMsg((String) m.getMessage(), CONST.glInbox, m.getOrigin(), m.getReplyBox());
+            NewGMMsg mGl = new NewGMMsg((String) m.getMessage(), AUX.glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
         } else {
             // TODO: Leader election
@@ -50,7 +50,7 @@ public class EntryPoint extends Process {
 
     void handle(NewLCMsg m) { // Join/rejoin LC
         if (glHostname != "") {
-            NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), CONST.glInbox, m.getOrigin(), m.getReplyBox());
+            NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), AUX.glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
         } else Logger.log("[EP.handle] New LC without GroupLeader");
     }

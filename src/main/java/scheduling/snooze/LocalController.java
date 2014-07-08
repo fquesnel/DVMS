@@ -49,7 +49,7 @@ public class LocalController extends Process {
      */
     void join() {
         // Send join request to EP
-        NewLCMsg m = new NewLCMsg(host.getName(), CONST.epInbox, name, inbox);
+        NewLCMsg m = new NewLCMsg(host.getName(), AUX.epInbox, name, inbox);
         m.send();
         try {
             // Wait for GroupManager acknowledgement

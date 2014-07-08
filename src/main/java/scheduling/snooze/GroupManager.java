@@ -78,7 +78,7 @@ public class GroupManager extends Process {
      */
     void join() {
         // Send join request to EP
-        NewGMMsg m = new NewGMMsg(host.getName(), CONST.epInbox, name, inbox);
+        NewGMMsg m = new NewGMMsg(host.getName(), AUX.epInbox, name, inbox);
         m.send();
         try {
             // Wait for GroupManager acknowledgement
@@ -97,19 +97,10 @@ public class GroupManager extends Process {
      */
     void recvLCBeats() {
         BeatLCMsg m = null;
-        try{
-            for (String lcHostname: lcInfo.keySet()) {
-                String lcBeatBox = lcHostname+"lcBeat";
-                if (Task.listen(lcBeatBox)) {
-                    m = (BeatLCMsg) Task.receive(lcBeatBox);
-                }
-                Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
-            }
-        } catch (org.simgrid.msg.TimeoutException te) {
-            Logger.log("HeartbeatGroup::receiveAnnounceGLMsg: timeout, GroupLeader dead");
-            te.printStackTrace();
-        } catch (Exception e) {
-            Logger.log(e);
+        for (String lcHostname: lcInfo.keySet()) {
+            String lcBeatBox = lcHostname+"lcBeat";
+            m = (BeatLCMsg) AUX.arecv(lcBeatBox);
+            Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
         }
     }
 
@@ -122,7 +113,7 @@ public class GroupManager extends Process {
         for (String lcHostname: lcInfo.keySet()) {
             long curTime = new Date().getTime();
             long lcTime  = lcInfo.get(lcHostname).heartbeatTimestamp.getTime();
-            if (curTime-lcTime > CONST.HeartbeatTimeout) {
+            if (curTime-lcTime > AUX.HeartbeatTimeout) {
                 deadLCs.add(lcHostname);
                 Logger.log("[deadLCs] LC " + lcHostname + "is dead");
             }

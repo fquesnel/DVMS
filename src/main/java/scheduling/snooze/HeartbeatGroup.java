@@ -47,7 +47,7 @@ public class HeartbeatGroup extends Process {
             if (gl == null) HeartbeatGroup.setGl((GroupLeader) m.getMessage());
             else Logger.log("HeartbeatGroup:newGL, ERROR: 2nd GroupLeader" + m);
             // Notify EP
-            m = new NewGLMsg((String) m.getMessage(), CONST.epInbox, null, null);
+            m = new NewGLMsg((String) m.getMessage(), AUX.epInbox, null, null);
             m.send();
         }
         catch (Exception e) {
@@ -58,40 +58,28 @@ public class HeartbeatGroup extends Process {
     void beatGLs() {
         try{
             // TODO: use non-blocking receive
-            BeatGLMsg m = (BeatGLMsg) Task.receive(glHeartbeatBeat, 2);
+            BeatGLMsg m = (BeatGLMsg) AUX.arecv(glHeartbeatBeat);
             Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
             GroupLeader gl = (GroupLeader) m.getMessage();
 
             if (HeartbeatGroup.gl != null && HeartbeatGroup.gl != gl)
                 Logger.log("[HeartbeatGroup] Err: multiple GLs");
-        } catch (org.simgrid.msg.TimeoutException te) {
-            Logger.log("HeartbeatGroup::receiveAnnounceGLMsg: timeout, GroupLeader dead");
-            te.printStackTrace();
         } catch (Exception e) {
             Logger.log(e);
         }
     }
 
     void newGMs(){
-        if (Task.listen(gmHeartbeatNew)) {
-            try {
-                NewGMMsg req = (NewGMMsg) Task.receive(gmHeartbeatNew);
-                gms.add(new GMHeartbeat((String) req.getMessage(), req.getReplyBox()));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        NewGMMsg req = (NewGMMsg) AUX.arecv(gmHeartbeatNew);
+        gms.add(new GMHeartbeat((String) req.getMessage(), req.getReplyBox()));
     }
 
     void recvGMBeats() {
         try{
             for (GMHeartbeat gm : gms) {
-                BeatGMMsg req = (BeatGMMsg) Task.receive(gmHeartbeatBeat, 2);
+                BeatGMMsg req = (BeatGMMsg) AUX.arecv(gmHeartbeatBeat);
                 Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
             }
-        } catch (org.simgrid.msg.TimeoutException te) {
-            Logger.log("HeartbeatGroup::receiveAnnounceGLMsg: timeout, GroupLeader dead");
-            te.printStackTrace();
         } catch (Exception e) {
             Logger.log(e);
         }

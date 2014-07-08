@@ -31,7 +31,7 @@ public class GroupLeader extends Process {
 
         while (true) {
             try {
-                m = (SnoozeMsg) Task.receive(CONST.glInbox);
+                m = (SnoozeMsg) Task.receive(AUX.glInbox);
                 handle(m);
             } catch(Exception e) {
                 e.printStackTrace();
