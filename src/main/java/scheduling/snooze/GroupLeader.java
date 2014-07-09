@@ -14,9 +14,7 @@ import java.util.Hashtable;
  */
 public class GroupLeader extends Process {
     private Host host;
-    private Hashtable<String, GMSum> gmInfo = new Hashtable<>(); // ConcurrentHashMap more efficient
-    private String glHeartbeatNew = "glHeartbeatNew";
-    private String glHeartbeatBeat = "glHeartbeatBeat";
+    private Hashtable<String, GMSum> gmInfo = new Hashtable<String, GMSum>(); // ConcurrentHashMap more efficient
     private String glSummary = "glSummary";
 
     GroupLeader() {
@@ -26,23 +24,29 @@ public class GroupLeader extends Process {
     @Override
     public void main(String[] strings) throws MsgException {
         SnoozeMsg m;
-        m = new NewGLMsg(host.getName(), glHeartbeatNew, null, null);
+        m = new NewGLMsg(host.getName(), AUX.glHeartbeatNew, null, null);
         m.send();
 
         while (true) {
-            try {
-                m = (SnoozeMsg) Task.receive(AUX.glInbox);
-                handle(m);
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
+            handleInbox();
             updateSummaryInfo();
             beat();
             sleep(AUX.HeartbeatInterval);
         }
     }
 
-    void handle(SnoozeMsg m) { Logger.log("[GroupLeader.handle] Unknown message" + m); }
+    void handleInbox() {
+        try {
+            while (Task.listen(AUX.glInbox)) {
+                SnoozeMsg m = (SnoozeMsg) Task.receive(AUX.glInbox);
+                handle(m);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void handle(SnoozeMsg m) { Logger.log("[GL.handle] Unknown message" + m); }
 
     /**
      * Join/rejoin LC: assign LC to least charged GroupManager
@@ -99,9 +103,23 @@ public class GroupLeader extends Process {
 
     }
 
+    /**
+     * Beats to heartbeat group and EP
+     */
     void beat() {
-        BeatGLMsg m = new BeatGLMsg(host.getName(), glHeartbeatBeat, null, null);
+        String glHostname = host.getName();
+        // Beat to HB
+        BeatGLMsg m = new BeatGLMsg(glHostname, AUX.glHeartbeatBeat, null, null);
         m.send();
+        // Beat to EP
+        m = new BeatGLMsg(glHostname, AUX.epInbox, null, null);
+        m.send();
+        // Beat to GMs
+        for (String gm: gmInfo.keySet()) {
+            m = new BeatGLMsg(glHostname, gm + "gmInbox", null, null);
+            m.send();
+        }
+
     }
 
     /**

@@ -7,10 +7,7 @@ package scheduling.snooze;
 import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.snooze.msg.BeatGMMsg;
-import scheduling.snooze.msg.BeatLCMsg;
-import scheduling.snooze.msg.LCChargeMsg;
-import scheduling.snooze.msg.NewLCMsg;
+import scheduling.snooze.msg.*;
 
 import java.net.UnknownHostException;
 import java.util.Date;
@@ -37,15 +34,36 @@ public class LocalController extends Process {
         join();
         while (true) {
             try{
-                beat();
-                recvGMbeat();
+                handleInbox();
                 gmDead();
+                beat();
                 sleep(AUX.HeartbeatInterval);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
+
+    void handleInbox() {
+        try {
+            while (Task.listen(inbox)) {
+                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+                handle(m);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void handle(SnoozeMsg m) { Logger.log("[GroupLeader.handle] Unknown message" + m); }
+
+    void handle(BeatGMMsg m) {
+        String gm = (String) m.getMessage();
+        if      (gmHostname == null) Logger.log("[LC.handle(BeatGMMsg)] no GM");
+        else if (gmHostname != gm)   Logger.log("[LC.handle(BeatGMMsg)] multiple GMs");
+        else gmBeatTimestamp = new Date();
+    }
+
 
     /**
      * Send join request to EP and wait for GroupManager acknowledgement
@@ -61,7 +79,7 @@ public class LocalController extends Process {
             lcCharge = gmHostname + "lcCharge";
             lcBeat = host.getName() + "lcBeat";
         } catch (TimeoutException e) {
-            Logger.log("[LC.join] No joining" + this);
+            Logger.log("[LC.join] No joining" + host.getName());
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
@@ -82,23 +100,9 @@ public class LocalController extends Process {
         m.send();
     }
 
-
     void beat() {
         BeatLCMsg m = new BeatLCMsg(host.getName(), lcBeat, null, null);
         m.send();
-    }
-
-    void recvGMbeat() {
-        try{
-            BeatGMMsg m = (BeatGMMsg) AUX.arecv(HeartbeatGroup.getGlHeartbeatBeat());
-            Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
-            String gm = (String) m.getMessage();
-
-            if   (gmHostname != null && gmHostname != gm) Logger.log("[LC] Err: multiple GMs");
-            else gmBeatTimestamp = new Date();
-        } catch (Exception e) {
-            Logger.log(e);
-        }
     }
 
     void gmDead() {

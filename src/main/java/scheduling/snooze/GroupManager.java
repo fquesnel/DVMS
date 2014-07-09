@@ -13,7 +13,9 @@ import java.util.Hashtable;
  */
 public class GroupManager extends Process {
     private Host host;
-    private String glHost;
+    private boolean thisGMStopped = false;
+    private String glHostname;
+    private Date   glTimestamp;
     private Hashtable<String, LCInfo> lcInfo;  // ConcurrentHashMap more efficient?
     // one mailbox per LC: lcHostname+"beat"
     private double procSum;
@@ -34,11 +36,13 @@ public class GroupManager extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
-        SnoozeMsg m = new NewGMMsg(host.getName(), gmHeartbeatNew, null, myHeartbeat);
+        SnoozeMsg m = new NewGMMsg(host.getName(), AUX.gmHeartbeatNew, null, myHeartbeat);
         m.send();
 
         while (true) {
             handleInbox();
+            if (glDead())      continue;
+            if (thisGMStopped) break;
             updateLCCharge();
             recvLCBeats();
             deadLCs();
@@ -50,14 +54,16 @@ public class GroupManager extends Process {
 
     void handleInbox() {
         try {
-            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-            handle(m);
+            while (Task.listen(inbox)) {
+                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+                handle(m);
+            }
         } catch(Exception e) {
             e.printStackTrace();
         }
     }
 
-    void handle(SnoozeMsg m) { Logger.log("[GroupLeader.handle] Unknown message" + m); }
+    void handle(SnoozeMsg m) { Logger.log("[GM.handle] Unknown message" + m); }
 
     /**
      * Integrate new LCs
@@ -73,6 +79,25 @@ public class GroupManager extends Process {
         m.send();
     }
 
+    void handle(GMElecMsg m) {
+        // Instantiate new GL
+        GroupLeader gl = new GroupLeader();
+        // Terminate GM
+        thisGMStopped = true;
+        // Acknowledge GL creation/GM termination
+        m = new GMElecMsg(host.currentHost().getName(), AUX.glElection, null, null);
+        m.send();
+    }
+
+    void handle(BeatGLMsg m) {
+        if (glHostname != "" && glHostname != m.getMessage())
+            Logger.log("[BM.handle(BeatGLMsg)] Different GLs: " + glHostname + ", " + m.getMessage());
+        if (glHostname == "") glHostname = (String) m.getMessage(); // New GL
+        glTimestamp = new Date();
+    }
+
+    boolean glDead() { return AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout; }
+
     /**
      * Send join request to EP and wait for GroupLeader acknowledgement
      */
@@ -81,9 +106,9 @@ public class GroupManager extends Process {
         NewGMMsg m = new NewGMMsg(host.getName(), AUX.epInbox, name, inbox);
         m.send();
         try {
-            // Wait for GroupManager acknowledgement
+            // Wait for GroupLeader acknowledgement
             m = (NewGMMsg) Task.receive(inbox, 2);
-            glHost = (String) m.getMessage();
+            glHostname = (String) m.getMessage();
         } catch (TimeoutException e) {
             Logger.log("[GM.join] No joining" + host.getName());
             e.printStackTrace();
@@ -100,7 +125,7 @@ public class GroupManager extends Process {
         for (String lcHostname: lcInfo.keySet()) {
             String lcBeatBox = lcHostname+"lcBeat";
             m = (BeatLCMsg) AUX.arecv(lcBeatBox);
-            Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
+            lcInfo.put(lcHostname, new LCInfo(lcInfo.get(lcHostname).charge, new Date()));
         }
     }
 
@@ -118,10 +143,7 @@ public class GroupManager extends Process {
         }
 
         // Remove dead LCs
-        for (String lcHostname: deadLCs) {
-            lcInfo.remove(lcHostname);
-            // TODO: interaction with scheduling (other operations)?
-        }
+        for (String lcHostname: deadLCs) lcInfo.remove(lcHostname);
     }
 
     void receiveHostQuery() {
@@ -159,7 +181,7 @@ public class GroupManager extends Process {
     }
 
     /**
-     * Sends a GM heartbeat
+     * Sends beats to heartbeat group and LCs
      */
     void beat() {
         // Beat to heartbeat group

@@ -3,10 +3,9 @@ package scheduling.snooze;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
-import scheduling.snooze.msg.NewGLMsg;
-import scheduling.snooze.msg.NewGMMsg;
-import scheduling.snooze.msg.NewLCMsg;
-import scheduling.snooze.msg.SnoozeMsg;
+import scheduling.snooze.msg.*;
+
+import java.util.Date;
 
 /**
  * Created by sudholt on 22/06/2014.
@@ -14,6 +13,7 @@ import scheduling.snooze.msg.SnoozeMsg;
 public class EntryPoint extends Process {
     private Host host;
     private String glHostname = "";
+    private Date   glTimestamp;
 
     EntryPoint() {
         host = Host.currentHost();
@@ -43,8 +43,7 @@ public class EntryPoint extends Process {
             NewGMMsg mGl = new NewGMMsg((String) m.getMessage(), AUX.glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
         } else {
-            // TODO: Leader election
-            Logger.log("[EP.handle] New GM without GroupLeader");
+            leaderElection();
         }
     }
 
@@ -53,5 +52,28 @@ public class EntryPoint extends Process {
             NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), AUX.glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
         } else Logger.log("[EP.handle] New LC without GroupLeader");
+    }
+
+    void handle(BeatGMMsg m) {
+        String gm = (String) m.getMessage();
+        if      (glHostname == null) Logger.log("[EP.handle(BeatGLMsg)] No GL");
+        else if (glHostname != gm)   Logger.log("[EP.handle(BeatGLMsg)] Multiple GLs");
+        else glTimestamp = new Date();
+    }
+
+    void glDead() {
+        if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout) leaderElection();
+    }
+
+    void leaderElection() {
+        GLElecMsg m = new GLElecMsg(null, AUX.glElection, null, AUX.epGLElection);
+        m.send();
+        try {
+            m = (GLElecMsg) Task.receive(AUX.epGLElection, AUX.GLCreationTimeout);
+            glHostname = (String) m.getMessage();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }

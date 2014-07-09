@@ -5,7 +5,11 @@ package scheduling.snooze;
  */
 public class Logger {
     public static void log(String s) {
-        System.err.println(s);
+        System.err.println("ERROR: " + s);
+    }
+
+    public static void logInfo(String s) {
+        System.err.println("INFO: " + s);
     }
 
     public static void log(Exception e) {
